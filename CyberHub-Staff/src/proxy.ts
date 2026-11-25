@@ -17,6 +17,10 @@ export async function proxy(request: NextRequest) {
     if (!response.ok) return NextResponse.redirect(login);
     const { data: { role } } = await response.json();
     if (role === "STUDENT") return NextResponse.redirect(new URL("/dashboard", studentPortal));
+    if (request.nextUrl.pathname === "/admin" || request.nextUrl.pathname.startsWith("/admin/")) {
+      if (role === "ADMIN") return NextResponse.next();
+      return NextResponse.redirect(new URL(role === "FACULTY" || role === "HOD" ? "/dashboard" : "/login", request.url));
+    }
     if (role === "FACULTY" || role === "HOD" || role === "ADMIN") return NextResponse.next();
   } catch {
     return NextResponse.redirect(login);
@@ -24,4 +28,4 @@ export async function proxy(request: NextRequest) {
   return NextResponse.redirect(login);
 }
 
-export const config = { matcher: ["/dashboard/:path*", "/events/:path*", "/add-event/:path*", "/approvals/:path*", "/student-records/:path*", "/profile/:path*"] };
+export const config = { matcher: ["/dashboard/:path*", "/events/:path*", "/add-event/:path*", "/approvals/:path*", "/student-records/:path*", "/profile/:path*", "/admin/:path*"] };

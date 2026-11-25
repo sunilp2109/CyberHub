@@ -128,6 +128,42 @@ test("supports all achievement types and scopes reads, edits and review actions"
   assert.ok(summary.json().data.counts.rejected >= 1);
 });
 
+test("lets an admin open student evidence and send the review decision back to its owner", async () => {
+  const admin = await login("admin");
+  const student = await login("student");
+  const otherStudent = await login("uat-student");
+  assert.equal(admin.role, "ADMIN");
+
+  const listUrl = "/api/v1/achievements";
+  const bytes = Buffer.from("%PDF-1.4\n%%EOF");
+  const response = await app.inject({
+    method: "POST", url: listUrl, headers: student,
+    payload: {
+      type: "CERTIFICATE", title: "Admin document review test", values: { issuer: "QA Institute" },
+      evidence: [{ fileName: "proof.pdf", mimeType: "application/pdf", content: bytes.toString("base64") }],
+    },
+  });
+  assert.equal(response.statusCode, 201);
+  const entry = response.json().data;
+  const queue = await app.inject({ url: listUrl, headers: admin });
+  assert.equal(queue.statusCode, 200);
+  assert.ok(queue.json().data.some((item: { id: string }) => item.id === entry.id));
+  const attachment = await app.inject({ url: `${listUrl}/${entry.id}/documents/${entry.documents[0].id}`, headers: admin });
+  assert.equal(attachment.statusCode, 200);
+  assert.deepEqual(attachment.rawPayload, bytes);
+
+  const comment = "Please attach the signed certificate.";
+  const decision = await app.inject({
+    method: "PATCH", url: `${listUrl}/${entry.id}/review`, headers: admin, payload: { action: "REJECTED", comment },
+  });
+  assert.equal(decision.statusCode, 200);
+  const mine = (await app.inject({ url: listUrl, headers: student })).json().data.find((item: { id: string }) => item.id === entry.id);
+  assert.equal(mine.status, "REJECTED");
+  assert.equal(mine.approvals[0].comment, comment);
+  const other = (await app.inject({ url: listUrl, headers: otherStudent })).json().data;
+  assert.ok(!other.some((item: { id: string }) => item.id === entry.id));
+});
+
 test("validates project funding and accepts an unfunded project", async () => {
   const student = await login("student");
   const url = "/api/v1/achievements";

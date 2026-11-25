@@ -108,7 +108,8 @@ npm run build:api
 
 The staff portal at `http://localhost:3001/login` signs in both roles. Students
 are sent to the student portal at `http://localhost:3000`. Faculty, HODs, and
-administrators use the staff portal. Both portals validate roles on protected
+administrators sign in through the staff portal. An administrator is sent to
+the Admin Portal at `http://localhost:3001/admin`. Both portals validate roles on protected
 requests. The API enforces student ownership, department-level review scope
 for faculty and HODs, and cross-department review for administrators. A
 faculty-to-student assignment model is not part of the schema.
@@ -118,6 +119,19 @@ a personal profile. Faculty can review submitted achievements, browse the
 permitted student directory, and log attended or conducted events. A decision
 recorded in Staff Approvals appears in the student's activity and dashboard.
 My Events lists only records owned by the signed-in staff member.
+
+### Admin Portal
+
+The admin workspace uses the shared session, profile, achievement, and
+evidence APIs for account details and document review. Review decisions apply
+to the original submission and are visible to the student.
+
+Academic data, faculty allocations, HOD appointments, academic reports,
+workspace preferences, and the demo activity log use browser storage scoped
+to the signed-in administrator. These screens use sample data and do not
+provision accounts or update the institutional database. Use sample records
+when trying these screens. The permissions matrix describes current access.
+Editing roles and retrieving institutional audit logs require backend support.
 
 PostgreSQL-backed accounts persist profiles, sessions, achievements, review
 history, and events. Demo accounts use a separate in-memory store and are

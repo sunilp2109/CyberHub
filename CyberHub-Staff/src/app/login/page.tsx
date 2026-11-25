@@ -88,7 +88,9 @@ export default function LoginPage() {
 
       if (role === "STUDENT") {
         window.location.replace(`${STUDENT_PORTAL_URL}/dashboard`);
-      } else if (role === "FACULTY" || role === "HOD" || role === "ADMIN") {
+      } else if (role === "ADMIN") {
+        router.replace("/admin");
+      } else if (role === "FACULTY" || role === "HOD") {
         router.push("/dashboard");
       } else {
         setError("Your account is not assigned to a supported ERP portal.");
