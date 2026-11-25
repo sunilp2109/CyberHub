@@ -15,8 +15,15 @@ export async function proxy(request: NextRequest) {
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) return NextResponse.redirect(login);
-    const { data: { role } } = await response.json();
+    const { data: { role, department } } = await response.json();
     if (role === "STUDENT") return NextResponse.redirect(new URL("/dashboard", studentPortal));
+    const departmentPortal = request.nextUrl.pathname === "/department-admin" || request.nextUrl.pathname.startsWith("/department-admin/");
+    if (role === "DEPARTMENT_ADMIN" && department?.id && department.active !== false) {
+      return departmentPortal ? NextResponse.next() : NextResponse.redirect(new URL("/department-admin", request.url));
+    }
+    if (departmentPortal && (role === "FACULTY" || role === "HOD" || role === "ADMIN")) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
     if (role === "FACULTY" || role === "HOD" || role === "ADMIN") return NextResponse.next();
   } catch {
     return NextResponse.redirect(login);
@@ -24,4 +31,4 @@ export async function proxy(request: NextRequest) {
   return NextResponse.redirect(login);
 }
 
-export const config = { matcher: ["/dashboard/:path*", "/events/:path*", "/add-event/:path*", "/approvals/:path*", "/student-records/:path*", "/profile/:path*"] };
+export const config = { matcher: ["/department-admin/:path*", "/dashboard/:path*", "/events/:path*", "/add-event/:path*", "/approvals/:path*", "/student-records/:path*", "/profile/:path*"] };

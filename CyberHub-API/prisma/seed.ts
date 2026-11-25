@@ -43,6 +43,28 @@ const department = await prisma.department.upsert({
 const admin = await createUser(identifier, password, "System Administrator", UserRole.ADMIN);
 await prisma.user.update({ where: { id: admin.id }, data: { departmentId: department.id } });
 
+const departmentAdminIdentifier = process.env.BOOTSTRAP_DEPARTMENT_ADMIN_IDENTIFIER?.trim().toLowerCase();
+const departmentAdminPassword = process.env.BOOTSTRAP_DEPARTMENT_ADMIN_PASSWORD;
+const departmentCode = process.env.BOOTSTRAP_DEPARTMENT_ADMIN_CODE?.trim().toUpperCase();
+if (departmentAdminIdentifier || departmentAdminPassword || departmentCode) {
+  if (!departmentAdminIdentifier || !departmentCode || !departmentAdminPassword || departmentAdminPassword.length < 10) {
+    throw new Error("Provide a Department Admin identifier, an existing department code, and a password of at least 10 characters.");
+  }
+  const assigned = await prisma.department.findUnique({ where: { code: departmentCode } });
+  if (!assigned?.active) throw new Error("Department Admin must be assigned to an active department.");
+  const existing = await prisma.user.findUnique({ where: { identifier: departmentAdminIdentifier } });
+  if (existing && (existing.role !== UserRole.DEPARTMENT_ADMIN || existing.departmentId !== assigned.id)) {
+    throw new Error("The identifier belongs to another role or department. Choose a distinct Department Admin identifier.");
+  }
+  if (!existing) {
+    await prisma.user.create({ data: {
+      identifier: departmentAdminIdentifier, name: "Department Administrator",
+      email: departmentAdminIdentifier.includes("@") ? departmentAdminIdentifier : undefined,
+      passwordHash: await argon2.hash(departmentAdminPassword), role: UserRole.DEPARTMENT_ADMIN, departmentId: assigned.id,
+    } });
+  }
+}
+
 const studentIdentifier = process.env.BOOTSTRAP_STUDENT_IDENTIFIER;
 const studentPassword = process.env.BOOTSTRAP_STUDENT_PASSWORD;
 if (studentIdentifier && studentPassword) {

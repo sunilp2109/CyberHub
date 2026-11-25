@@ -106,11 +106,12 @@ npm run build:api
 
 ## Authentication and workflow scope
 
-The staff portal at `http://localhost:3001/login` signs in both roles. Students
-are sent to the student portal at `http://localhost:3000`. Faculty, HODs, and
-administrators use the staff portal. Both portals validate roles on protected
+The staff portal at `http://localhost:3001/login` hosts the shared sign-in.
+Students are sent to the student portal at `http://localhost:3000`. Faculty,
+HODs, and system administrators use the staff portal. Department Admins
+open their department workspace. The portals validate roles on protected
 requests. The API enforces student ownership, department-level review scope
-for faculty and HODs, and cross-department review for administrators. A
+for faculty, HODs, and Department Admins, and cross-department review for system administrators. A
 faculty-to-student assignment model is not part of the schema.
 
 The student portal provides thirteen achievement workspaces, a dashboard, and
@@ -118,6 +119,30 @@ a personal profile. Faculty can review submitted achievements, browse the
 permitted student directory, and log attended or conducted events. A decision
 recorded in Staff Approvals appears in the student's activity and dashboard.
 My Events lists only records owned by the signed-in staff member.
+
+### Department Admin Portal
+
+Sign in at `http://localhost:3001/login` with a `DEPARTMENT_ADMIN` account
+assigned to an active department. The portal is available at
+`http://localhost:3001/department-admin`. Existing Student, Faculty, HOD, and
+Admin roles retain their current portals. The student directory, submission
+list, evidence downloads, and review decisions use the authenticated department
+assignment to scope access.
+
+The development API provides a `department-admin` demo account using the same
+password as the other development preview accounts. Academic record editing,
+CSV imports, class management, subjects, and allocations run as a browser-local
+development demo. Use sample records for these workflows. Production builds
+show which academic screens require a service connection. Profile details use
+the existing account service. The profile picture and personal preferences
+are stored on the user's device.
+
+Run `npm run db:generate` and `npm run db:push` for your development
+database to add the Department Admin role. To provision a Department Admin with
+the existing seed command, provide `BOOTSTRAP_DEPARTMENT_ADMIN_IDENTIFIER`,
+`BOOTSTRAP_DEPARTMENT_ADMIN_PASSWORD`, and
+`BOOTSTRAP_DEPARTMENT_ADMIN_CODE` alongside the regular seed settings.
+Use a unique account identifier and an existing active department code.
 
 PostgreSQL-backed accounts persist profiles, sessions, achievements, review
 history, and events. Demo accounts use a separate in-memory store and are

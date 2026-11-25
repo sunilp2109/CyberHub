@@ -33,7 +33,7 @@ type UserWithRelations = {
   role: UserRole;
   active: boolean;
   departmentId?: string | null;
-  department: { id: string; code: string; name: string } | null;
+  department: { id: string; code: string; name: string; active?: boolean } | null;
   student: {
     id: string;
     userId: string;
@@ -43,6 +43,7 @@ type UserWithRelations = {
     programme: string;
     batch: string;
     semester: number;
+    createdAt?: Date;
   } | null;
   staffProfile: {
     id: string;
@@ -53,6 +54,7 @@ type UserWithRelations = {
 };
 
 const MOCK_DEPT = { id: "dept-cse-001", code: "CSE", name: "Computer Science and Engineering" };
+const TEST_OTHER_DEPT = { id: "test-dept-other", code: "TEST", name: "Other test department" };
 
 const MOCK_USERS: Record<string, { password: string; user: UserWithRelations }> = {
   student: {
@@ -76,6 +78,7 @@ const MOCK_USERS: Record<string, { password: string; user: UserWithRelations }> 
         programme: "B.Tech Cybersecurity",
         batch: "2024-2028",
         semester: 5,
+        createdAt: new Date("2026-11-20T09:00:00Z"),
       },
       staffProfile: null,
     },
@@ -101,6 +104,7 @@ const MOCK_USERS: Record<string, { password: string; user: UserWithRelations }> 
         programme: "B.Tech Cybersecurity",
         batch: "2024-2028",
         semester: 5,
+        createdAt: new Date("2026-11-23T09:00:00Z"),
       },
       staffProfile: null,
     },
@@ -124,6 +128,21 @@ const MOCK_USERS: Record<string, { password: string; user: UserWithRelations }> 
         employeeId: "ADM001",
         designation: "System Administrator",
       },
+    },
+  },
+  "department-admin": {
+    password: "password123",
+    user: {
+      id: "usr-department-admin-001",
+      identifier: "department-admin",
+      email: "department-admin@example.edu",
+      name: "Morgan Lee",
+      role: UserRole.DEPARTMENT_ADMIN,
+      active: true,
+      departmentId: MOCK_DEPT.id,
+      department: MOCK_DEPT,
+      student: null,
+      staffProfile: null,
     },
   },
   admin001: {
@@ -168,6 +187,24 @@ const MOCK_USERS: Record<string, { password: string; user: UserWithRelations }> 
       },
     },
   },
+  ...(process.env.NODE_ENV === "test" ? {
+    "test-outside-student": {
+      password: "password123",
+      user: {
+        id: "test-outside-user", identifier: "test-outside-student", email: null, name: "Outside department student",
+        role: UserRole.STUDENT, active: true, departmentId: TEST_OTHER_DEPT.id, department: TEST_OTHER_DEPT, staffProfile: null,
+        student: { id: "test-outside-student-profile", userId: "test-outside-user", registerNo: "TEST001",
+          department: TEST_OTHER_DEPT.name, departmentId: TEST_OTHER_DEPT.id, programme: "B.Tech", batch: "2026–2030", semester: 1 },
+      },
+    },
+    "test-unassigned-admin": {
+      password: "password123",
+      user: {
+        id: "test-unassigned-admin", identifier: "test-unassigned-admin", email: null, name: "Unassigned admin",
+        role: UserRole.DEPARTMENT_ADMIN, active: true, departmentId: null, department: null, student: null, staffProfile: null,
+      },
+    },
+  } : {}),
 };
 
 const mockSessions = new Map<string, { user: UserWithRelations; expiresAt: Date }>();
@@ -183,7 +220,7 @@ type MockAchievementRecord = {
   status: AchievementStatus;
   submittedAt: Date | null;
   reviewedAt: Date | null;
-  documents: Array<{ id: string; fileName: string; storageKey: string; mimeType: string; sizeBytes: number }>;
+  documents: Array<{ id: string; fileName: string; storageKey: string; mimeType: string; sizeBytes: number; createdAt?: Date }>;
   approvals: Array<{ id: string; achievementId: string; reviewerId: string; action: AchievementStatus; comment?: string | null; createdAt: Date }>;
   createdAt: Date;
   updatedAt: Date;
@@ -631,6 +668,10 @@ function isDemoSession(request: FastifyRequest) {
 
 function reviewScope(user: UserWithRelations): Prisma.AchievementWhereInput | null {
   if (user.role === UserRole.ADMIN) return {};
+  if (user.role === UserRole.DEPARTMENT_ADMIN) {
+    if (!user.departmentId || user.department?.id !== user.departmentId || user.department.active === false) return null;
+    return { student: { departmentId: user.departmentId } };
+  }
   if ((user.role === UserRole.FACULTY || user.role === UserRole.HOD) && user.departmentId) {
     return { student: { departmentId: user.departmentId } };
   }
@@ -651,6 +692,19 @@ const achievementIncludes = {
   documents: { select: { id: true, fileName: true, mimeType: true, sizeBytes: true, createdAt: true } },
   approvals: { orderBy: { createdAt: "desc" }, take: 1, select: { action: true, comment: true } },
 } satisfies Prisma.AchievementInclude;
+
+const departmentReviewIncludes = {
+  ...achievementIncludes,
+  approvals: { orderBy: { createdAt: "desc" }, select: { action: true, comment: true, createdAt: true } },
+} satisfies Prisma.AchievementInclude;
+
+function departmentDemoAchievement(record: MockAchievementRecord) {
+  return {
+    ...record,
+    approvals: record.approvals.map(({ action, comment, createdAt }) => ({ action, comment, createdAt })),
+    documents: record.documents.map(({ id, fileName, mimeType, sizeBytes, createdAt }) => ({ id, fileName, mimeType, sizeBytes, createdAt })),
+  };
+}
 
 app.get("/api/v1/profile", async (request, reply) => {
   const user = await getCurrentUser(request);
@@ -699,7 +753,8 @@ app.get("/api/v1/achievements", async (request, reply) => {
     if (isStudent) return { data: records };
     return { data: records.map((record) => {
       const student = mockStudentFor(record.studentId);
-      return { ...record, student: { registerNo: student?.student?.registerNo, department: student?.student?.department, user: { name: student?.name } } };
+      const result = user.role === UserRole.DEPARTMENT_ADMIN ? departmentDemoAchievement(record) : record;
+      return { ...result, student: { registerNo: student?.student?.registerNo, department: student?.student?.department, user: { name: student?.name } } };
     }) };
   }
 
@@ -709,7 +764,7 @@ app.get("/api/v1/achievements", async (request, reply) => {
   return { data: await prisma.achievement.findMany({
     where,
     orderBy,
-    include: { ...achievementIncludes, student: { select: { registerNo: true, department: true, user: { select: { name: true } } } } },
+    include: { ...(user.role === UserRole.DEPARTMENT_ADMIN ? departmentReviewIncludes : achievementIncludes), student: { select: { registerNo: true, department: true, user: { select: { name: true } } } } },
   }) };
 });
 
@@ -764,8 +819,9 @@ app.get("/api/v1/staff/students", async (request, reply) => {
     }
     return { data: Array.from(students, ([id, candidate]) => ({
       ...candidate.student,
-      user: { name: candidate.name, email: candidate.email },
-      achievements: mockAchievements.filter((record) => record.studentId === id && record.status !== AchievementStatus.DRAFT),
+      user: { name: candidate.name, email: candidate.email, ...(user.role === UserRole.DEPARTMENT_ADMIN ? { active: candidate.active, phone: candidate.phone } : {}) },
+      achievements: mockAchievements.filter((record) => record.studentId === id && record.status !== AchievementStatus.DRAFT)
+        .map((record) => user.role === UserRole.DEPARTMENT_ADMIN ? departmentDemoAchievement(record) : record),
     })) };
   }
 
@@ -773,7 +829,8 @@ app.get("/api/v1/staff/students", async (request, reply) => {
     where: user.role === UserRole.ADMIN ? {} : { departmentId: user.departmentId },
     select: {
       id: true, registerNo: true, department: true, programme: true, batch: true, semester: true,
-      user: { select: { name: true, email: true } },
+      ...(user.role === UserRole.DEPARTMENT_ADMIN ? { createdAt: true } : {}),
+      user: { select: { name: true, email: true, ...(user.role === UserRole.DEPARTMENT_ADMIN ? { active: true, phone: true } : {}) } },
       achievements: {
         where: { status: { not: AchievementStatus.DRAFT } },
         orderBy: { createdAt: "desc" },
@@ -786,14 +843,14 @@ app.get("/api/v1/staff/students", async (request, reply) => {
 
 app.get("/api/v1/staff/events", async (request, reply) => {
   const user = await getCurrentUser(request);
-  if (!user || user.role === UserRole.STUDENT) return reply.code(403).send({ error: { message: "Staff access required." } });
+  if (!user || user.role === UserRole.STUDENT || user.role === UserRole.DEPARTMENT_ADMIN) return reply.code(403).send({ error: { message: "Faculty portal access required." } });
   if (isDemoSession(request)) return { data: demoEvents.filter((event) => event.ownerId === user.id) };
   return { data: await prisma.facultyEvent.findMany({ where: { ownerId: user.id }, orderBy: { createdAt: "desc" } }) };
 });
 
 app.post("/api/v1/staff/events", async (request, reply) => {
   const user = await getCurrentUser(request);
-  if (!user || user.role === UserRole.STUDENT) return reply.code(403).send({ error: { message: "Staff access required." } });
+  if (!user || user.role === UserRole.STUDENT || user.role === UserRole.DEPARTMENT_ADMIN) return reply.code(403).send({ error: { message: "Faculty portal access required." } });
   const parsed = eventSchema.safeParse(request.body);
   if (!parsed.success) return reply.code(400).send({ error: { message: "Check the required fields, event times, and participation details." } });
 
@@ -985,7 +1042,7 @@ app.patch("/api/v1/achievements/:id/review", async (request, reply) => {
       await transaction.approvalAction.create({
         data: { achievementId: record.id, reviewerId: user.id, action: parsed.data.action, comment: parsed.data.comment },
       });
-      return transaction.achievement.findUnique({ where: { id: record.id }, include: achievementIncludes });
+      return transaction.achievement.findUnique({ where: { id: record.id }, include: user.role === UserRole.DEPARTMENT_ADMIN ? departmentReviewIncludes : achievementIncludes });
     });
     if (reviewed) return { data: reviewed };
     return reply.code(409).send({ error: { code: "INVALID_STATE", message: "The submission changed or was already reviewed." } });
@@ -1010,7 +1067,7 @@ app.patch("/api/v1/achievements/:id/review", async (request, reply) => {
     createdAt: new Date(),
   });
 
-  return { data: achievement };
+  return { data: user.role === UserRole.DEPARTMENT_ADMIN ? departmentDemoAchievement(achievement) : achievement };
 });
 
 app.setErrorHandler((error, request, reply) => {

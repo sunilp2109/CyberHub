@@ -128,6 +128,68 @@ test("supports all achievement types and scopes reads, edits and review actions"
   assert.ok(summary.json().data.counts.rejected >= 1);
 });
 
+test("scopes Department Admin directories, review decisions, and attachments to the assigned department", async () => {
+  const admin = await login("department-admin");
+  const unassigned = await login("test-unassigned-admin");
+  const student = await login("student");
+  const outside = await login("test-outside-student");
+  assert.equal(admin.role, "DEPARTMENT_ADMIN");
+  const session = await app.inject({ url: "/api/v1/auth/me", headers: admin });
+  const departmentId = session.json().data.department.id;
+  const listUrl = "/api/v1/achievements";
+  const bytes = Buffer.from("%PDF-1.4\n%%EOF");
+  const create = (headers: typeof student, title: string) => app.inject({
+    method: "POST", url: listUrl, headers,
+    payload: { type: "CERTIFICATE", title, values: { issuer: "QA Institute" },
+      evidence: [{ fileName: "proof.pdf", mimeType: "application/pdf", content: bytes.toString("base64") }] },
+  });
+  const insideResponse = await create(student, "Department student certificate");
+  const outsideResponse = await create(outside, "Outside department certificate");
+  assert.equal(insideResponse.statusCode, 201);
+  assert.equal(outsideResponse.statusCode, 201);
+  const insideRecord = insideResponse.json().data;
+  const outsideRecord = outsideResponse.json().data;
+
+  const directory = await app.inject({ url: "/api/v1/staff/students", headers: admin });
+  assert.equal(directory.statusCode, 200);
+  assert.ok(directory.json().data.some(({ id }: { id: string }) => id === insideRecord.studentId));
+  assert.ok(!directory.json().data.some(({ id }: { id: string }) => id === outsideRecord.studentId));
+  const scopedQueue = await app.inject({ url: listUrl, headers: admin });
+  assert.equal(scopedQueue.statusCode, 200);
+  const visible = scopedQueue.json().data.find(({ id }: { id: string }) => id === insideRecord.id);
+  assert.ok(visible);
+  assert.equal(visible.documents[0].storageKey, undefined);
+  assert.ok(!scopedQueue.json().data.some(({ id }: { id: string }) => id === outsideRecord.id));
+  assert.equal((await app.inject({ url: listUrl, headers: unassigned })).statusCode, 403);
+  assert.equal((await app.inject({ url: "/api/v1/staff/students", headers: unassigned })).statusCode, 403);
+  assert.equal((await app.inject({ url: "/api/v1/staff/events", headers: admin })).statusCode, 403);
+
+  const evidencePath = (record: typeof insideRecord) => `${listUrl}/${record.id}/documents/${record.documents[0].id}`;
+  assert.equal((await app.inject({ url: evidencePath(outsideRecord), headers: admin })).statusCode, 404);
+  assert.equal((await app.inject({ url: evidencePath(insideRecord), headers: unassigned })).statusCode, 403);
+  const allowedEvidence = await app.inject({ url: evidencePath(insideRecord), headers: admin });
+  assert.equal(allowedEvidence.statusCode, 200);
+  assert.deepEqual(allowedEvidence.rawPayload, bytes);
+  const reject = (record: typeof insideRecord) => app.inject({ method: "PATCH", url: `${listUrl}/${record.id}/review`,
+    headers: admin, payload: { action: "REJECTED", comment: "Please attach the signed certificate." } });
+  assert.equal((await reject(outsideRecord)).statusCode, 404);
+  assert.equal((await reject(insideRecord)).statusCode, 200);
+  const ownList = await app.inject({ url: listUrl, headers: student });
+  const result = ownList.json().data.find(({ id }: { id: string }) => id === insideRecord.id);
+  assert.equal(result.status, "REJECTED");
+  assert.equal(result.approvals[0].comment, "Please attach the signed certificate.");
+  const reviewHistory = await app.inject({ url: listUrl, headers: admin });
+  const decision = reviewHistory.json().data.find(({ id }: { id: string }) => id === insideRecord.id).approvals[0];
+  assert.ok(decision.createdAt);
+  assert.equal(decision.reviewerId, undefined);
+
+  const update = await app.inject({ method: "PATCH", url: "/api/v1/profile", headers: admin,
+    payload: { name: "Morgan Lee", role: "ADMIN", departmentId: "test-dept-other" } });
+  assert.equal(update.statusCode, 200);
+  assert.equal(update.json().data.role, "DEPARTMENT_ADMIN");
+  assert.equal(update.json().data.department.id, departmentId);
+});
+
 test("validates project funding and accepts an unfunded project", async () => {
   const student = await login("student");
   const url = "/api/v1/achievements";

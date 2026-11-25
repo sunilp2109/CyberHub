@@ -17,6 +17,7 @@ export async function proxy(request: NextRequest) {
     if (!response.ok) return NextResponse.redirect(login);
     const { data: { role } } = await response.json();
     if (role === "STUDENT") return NextResponse.next();
+    if (role === "DEPARTMENT_ADMIN") return NextResponse.redirect(new URL("/department-admin", staffPortal));
     if (role === "FACULTY" || role === "HOD" || role === "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", staffPortal));
     }

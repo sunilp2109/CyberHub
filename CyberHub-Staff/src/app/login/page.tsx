@@ -44,7 +44,7 @@ const IconAlert = () => (
 
 type LoginResponse = {
   data?: {
-    role?: "STUDENT" | "FACULTY" | "HOD" | "ADMIN";
+    role?: "STUDENT" | "FACULTY" | "HOD" | "ADMIN" | "DEPARTMENT_ADMIN";
   };
 };
 
@@ -88,6 +88,8 @@ export default function LoginPage() {
 
       if (role === "STUDENT") {
         window.location.replace(`${STUDENT_PORTAL_URL}/dashboard`);
+      } else if (role === "DEPARTMENT_ADMIN") {
+        router.replace("/department-admin");
       } else if (role === "FACULTY" || role === "HOD" || role === "ADMIN") {
         router.push("/dashboard");
       } else {
