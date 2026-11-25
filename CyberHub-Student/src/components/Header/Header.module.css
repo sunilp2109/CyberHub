@@ -1,11 +1,11 @@
 .header {
-  min-height: 4.5rem;
-  background: #FFFFFF;
-  border-bottom: 1px solid #e2e8f0;
+  min-height: var(--portal-header-height);
+  background: var(--surface);
+  border-bottom: 1px solid var(--portal-header-divider);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.875rem var(--page-gutter);
+  padding: 0.75rem var(--page-gutter);
   gap: 16px;
   position: sticky;
   top: 0;
@@ -17,11 +17,11 @@
 .title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #0D1F3C;
+  color: var(--text);
   line-height: 1.2;
 }
 
-.subtitle { font-size: 0.8rem; line-height: 1.5; color: #475569; }
+.subtitle { font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); }
 
 .right {
   display: flex;
@@ -30,7 +30,7 @@
   margin-left: auto;
 }
 
-.profileLink { display: inline-flex; align-items: center; min-height: 44px; color: #1e40af; font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
+.profileLink { display: inline-flex; align-items: center; min-height: 44px; color: var(--brand-blue-text); font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
 
 @media (max-width: 760px) {
   .header { gap: 0.75rem; position: static; }
@@ -58,8 +58,8 @@
   font-family: inherit;
 }
 .searchInput:focus {
-  border-color: #29B5D5;
-  background: white;
+  border-color: var(--brand-blue);
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(41, 181, 213, 0.1);
   width: 250px;
 }
@@ -81,9 +81,9 @@
   flex-shrink: 0;
 }
 .iconBtn:hover {
-  background: #E8F7FB;
-  border-color: #29B5D5;
-  color: #29B5D5;
+  background: var(--surface-blue);
+  border-color: var(--brand-blue);
+  color: var(--brand-blue);
 }
 
 .notifDot {
@@ -94,7 +94,7 @@
   height: 7px;
   background: var(--error);
   border-radius: var(--radius-full);
-  border: 1.5px solid white;
+  border: 1.5px solid var(--surface);
 }
 
 .actions { display: flex; align-items: center; gap: 8px; }
@@ -103,8 +103,8 @@
   width: 34px;
   height: 34px;
   border-radius: var(--radius-full);
-  background: #0D1F3C;
-  color: white;
+  background: var(--brand-blue);
+  color: var(--on-brand);
   font-size: 0.75rem;
   font-weight: 700;
   display: flex;

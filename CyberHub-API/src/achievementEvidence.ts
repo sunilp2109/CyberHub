@@ -29,7 +29,7 @@ const signatures = {
   "image/jpeg": Buffer.from([0xff, 0xd8, 0xff]),
 };
 
-const evidenceFile = z.object({
+export const evidenceFileSchema = z.object({
   kind: z.enum(["offer-letter", "completion-certificate"]).optional(),
   fileName: z.string().trim().min(1).max(200).regex(/^[^\u0000-\u001f\u007f/\\]+$/),
   mimeType: z.enum(["application/pdf", "image/png", "image/jpeg"]),
@@ -44,7 +44,7 @@ const evidenceFile = z.object({
   return { kind: file.kind, fileName: file.fileName, mimeType: file.mimeType, bytes };
 });
 
-export const evidenceSchema = z.array(evidenceFile).max(maxEvidenceFiles);
+export const evidenceSchema = z.array(evidenceFileSchema).max(maxEvidenceFiles);
 
 export async function withAchievementEvidence<T>(
   files: z.output<typeof evidenceSchema>,

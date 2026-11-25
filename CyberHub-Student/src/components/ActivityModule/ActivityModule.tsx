@@ -25,9 +25,13 @@ export interface ActivityModuleProps {
 
 interface ActivityDocument { id: string; fileName: string }
 
+const statuses = ["Submitted", "Approved", "Rejected"] as const;
+type SubmissionStatus = typeof statuses[number];
+const statusLabels = new Map<string, SubmissionStatus>(statuses.map((status) => [status.toUpperCase(), status]));
+
 interface ActivityRecord {
   id: string;
-  status: "Draft" | "Submitted" | "Approved" | "Rejected";
+  status: SubmissionStatus;
   createdAt: string;
   values: Record<string, string>;
   rejectionReason?: string;
@@ -75,22 +79,37 @@ export default function ActivityModule({
       const response = await fetch(`${API_URL}/api/v1/achievements`, { credentials: "include" });
       if (!response.ok) throw new Error("Unable to load records.");
       const payload = await response.json() as { data: ApiActivityRecord[] };
-      setRecords(payload.data
-        .filter((record) => record.type === activityType)
-        .map((record) => ({
+      const nextRecords = payload.data.flatMap((record) => {
+        const status = statusLabels.get(record.status);
+        if (record.type !== activityType || !status) return [];
+        return [{
           id: record.id,
-          status: record.status === "DRAFT" ? "Draft" : record.status === "APPROVED" ? "Approved" : record.status === "REJECTED" ? "Rejected" : "Submitted",
+          status,
           createdAt: new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(record.createdAt)),
           values: { ...(record.metadata ?? {}), title: record.title, description: record.description ?? "" },
           documents: record.documents,
           rejectionReason: record.approvals?.find((approval) => approval.action === "REJECTED")?.comment?.trim(),
-        })));
+        }];
+      });
+      setRecords(nextRecords);
+      if (!formHref) {
+        const url = new URL(window.location.href);
+        const record = nextRecords.find((item) => item.id === url.searchParams.get("edit") && item.status === "Submitted");
+        if (record) {
+          url.searchParams.delete("edit");
+          window.history.replaceState(null, "", url);
+          setEditingId(record.id);
+          setValues(record.values);
+          setError("");
+          setFormOpen(true);
+        }
+      }
     } catch {
       setLoadError(true);
     } finally {
       setLoading(false);
     }
-  }, [activityType]);
+  }, [activityType, formHref]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void loadRecords(); }, 0);
@@ -191,10 +210,12 @@ export default function ActivityModule({
         </section>
 
         <section className={styles.stats} aria-label={`${title} summary`}>
-          <div className={styles.statCard}><span>Total records</span><strong>{records.length}</strong></div>
-          <div className={styles.statCard}><span>Submitted</span><strong>{records.filter((record) => record.status === "Submitted").length}</strong></div>
-          <div className={styles.statCard}><span>Drafts</span><strong>{records.filter((record) => record.status === "Draft").length}</strong></div>
-          <div className={styles.statCard}><span>Next step</span><strong className={styles.nextStep}>{records.length ? "Keep current" : "Add details"}</strong></div>
+          {statuses.map((status) => (
+            <div className={styles.statCard} key={status}>
+              <span>{status}</span>
+              <strong>{loading || loadError ? "—" : records.filter((record) => record.status === status).length}</strong>
+            </div>
+          ))}
         </section>
 
         <section className={styles.toolbar}>
@@ -209,11 +230,12 @@ export default function ActivityModule({
             />
           </label>
           <div className={styles.filters} aria-label="Filter records">
-            {(["All", "Submitted", "Draft", "Approved", "Rejected"] as const).map((filter) => (
+            {(["All", ...statuses] as const).map((filter) => (
               <button
                 type="button"
                 key={filter}
                 className={statusFilter === filter ? styles.filterActive : styles.filter}
+                aria-pressed={statusFilter === filter}
                 onClick={() => setStatusFilter(filter)}
               >
                 {filter}
@@ -234,7 +256,7 @@ export default function ActivityModule({
             {filteredRecords.map((record) => (
               <article className={styles.recordCard} key={record.id}>
                 <div className={styles.cardTop}>
-                  <span className={record.status === "Rejected" ? styles.rejected : record.status === "Submitted" ? styles.submitted : styles.draft}>
+                  <span className={styles.status} data-status={record.status}>
                     {record.status}
                   </span>
                   <span className={styles.date}>{record.createdAt}</span>
@@ -273,7 +295,7 @@ export default function ActivityModule({
                 <div className={styles.cardFooter}>
                   <span>{formHref && activityType !== "PROJECT" ? `${record.documents?.length ?? 0} attachment(s)`
                     : `${activityType === "PROJECT" ? fields.slice(1).filter((field) => record.values[field.key]).length : fields.length} details available`}</span>
-                  {(record.status === "Draft" || record.status === "Submitted") && (
+                  {record.status === "Submitted" && (
                     formHref ? <Link href={`${formHref}?edit=${encodeURIComponent(record.id)}`} prefetch={false}>Edit</Link> : <button
                       type="button"
                       onClick={() => {
@@ -314,7 +336,7 @@ export default function ActivityModule({
           <section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="activity-form-title">
             <div className={styles.modalHeader}>
               <div>
-                <h2 id="activity-form-title">Add {itemLabel}</h2>
+                <h2 id="activity-form-title">{editingId ? "Edit" : "Add"} {itemLabel}</h2>
               </div>
               <button type="button" className={styles.closeButton} onClick={() => setFormOpen(false)} aria-label="Close form">×</button>
             </div>

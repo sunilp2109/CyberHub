@@ -3,7 +3,7 @@ export type Row = Record<string, string> & { id: string };
 export type Records = Record<ModuleId, Row[]>;
 export type AdminAccount = { id: string; name: string; email?: string | null; identifier: string; department: { id: string; code: string; name: string } };
 export type AuditEntry = { id: string; user: string; action: string; module: string; detail: string; at: string; recordId?: string };
-export type Settings = { defaultYear: string; reviewAlerts: boolean; theme: "light" | "dark"; avatar?: string };
+export type Settings = { defaultYear: string; reviewAlerts: boolean; avatar?: string };
 export type AdminData = { records: Records; audit: AuditEntry[]; settings: Settings };
 
 type Field = {

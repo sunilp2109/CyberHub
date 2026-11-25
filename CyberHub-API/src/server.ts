@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
-import Fastify, { FastifyRequest } from "fastify";
+import Fastify, { type FastifyReply, FastifyRequest } from "fastify";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -9,7 +9,7 @@ import argon2 from "argon2";
 import { AchievementStatus, AchievementType, Prisma, PrismaClient, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { eventSchema } from "./eventValidation.js";
-import { evidenceBodyLimit, evidenceSchema, competitionValuesSchema, readAchievementEvidence, withAchievementEvidence } from "./achievementEvidence.js";
+import { evidenceBodyLimit, evidenceFileSchema, evidenceSchema, competitionValuesSchema, readAchievementEvidence, withAchievementEvidence } from "./achievementEvidence.js";
 
 const prisma = new PrismaClient();
 const env = {
@@ -443,9 +443,34 @@ const profileUpdateSchema = z.object({
 
 type StoredDemoEvent = {
   id: string; ownerId: string; mode: string; name: string; category: string;
-  eventDate: Date; facultyRole: string; details: z.infer<typeof eventSchema>;
+  eventDate: Date; facultyRole: string; details: Prisma.JsonObject;
 };
 const demoEvents: StoredDemoEvent[] = [];
+const eventCertificateSchema = z.object({
+  fileName: z.string(), storageKey: z.string(), mimeType: z.enum(["application/pdf", "image/png", "image/jpeg"]), sizeBytes: z.number(),
+});
+
+function getEventCertificate(details: Prisma.JsonValue) {
+  if (!details || typeof details !== "object" || Array.isArray(details)) return null;
+  return eventCertificateSchema.safeParse(details.certificateDocument).data ?? null;
+}
+
+function publicEvent<T extends { details: Prisma.JsonValue }>(event: T) {
+  const certificate = getEventCertificate(event.details);
+  const details = event.details && typeof event.details === "object" && !Array.isArray(event.details)
+    ? { ...event.details } : null;
+  if (details) delete details.certificateDocument;
+  return { ...event, details: details ?? event.details,
+    certificate: certificate ? { fileName: certificate.fileName, mimeType: certificate.mimeType, sizeBytes: certificate.sizeBytes } : null };
+}
+
+function sendEvidence(reply: FastifyReply, file: { fileName: string; mimeType: string }, bytes: Buffer) {
+  const encodedName = encodeURIComponent(Buffer.from(file.fileName).toString()).replace(/['()*]/g, (char) => `%${char.charCodeAt(0).toString(16)}`);
+  return reply.type(file.mimeType)
+    .header("Cache-Control", "private, no-store")
+    .header("Content-Disposition", `attachment; filename*=UTF-8''${encodedName}`)
+    .send(bytes);
+}
 
 const app = Fastify({
   logger: {
@@ -841,34 +866,55 @@ app.get("/api/v1/staff/students", async (request, reply) => {
   }) };
 });
 
+const eventWithCertificateSchema = eventSchema.and(z.object({ certificate: evidenceFileSchema.optional() }))
+  .refine(({ mode, certificate }) => !certificate || mode === "attended");
+
 app.get("/api/v1/staff/events", async (request, reply) => {
   const user = await getCurrentUser(request);
   if (!user || user.role === UserRole.STUDENT || user.role === UserRole.DEPARTMENT_ADMIN) return reply.code(403).send({ error: { message: "Faculty portal access required." } });
-  if (isDemoSession(request)) return { data: demoEvents.filter((event) => event.ownerId === user.id) };
-  return { data: await prisma.facultyEvent.findMany({ where: { ownerId: user.id }, orderBy: { createdAt: "desc" } }) };
+  const events = isDemoSession(request)
+    ? demoEvents.filter((event) => event.ownerId === user.id)
+    : await prisma.facultyEvent.findMany({ where: { ownerId: user.id }, orderBy: { createdAt: "desc" } });
+  return { data: events.map(publicEvent) };
 });
 
-app.post("/api/v1/staff/events", async (request, reply) => {
+app.post("/api/v1/staff/events", { bodyLimit: evidenceBodyLimit }, async (request, reply) => {
   const user = await getCurrentUser(request);
   if (!user || user.role === UserRole.STUDENT || user.role === UserRole.DEPARTMENT_ADMIN) return reply.code(403).send({ error: { message: "Faculty portal access required." } });
-  const parsed = eventSchema.safeParse(request.body);
-  if (!parsed.success) return reply.code(400).send({ error: { message: "Check the required fields, event times, and participation details." } });
-
-  const event = {
-    ownerId: user.id,
-    mode: parsed.data.mode,
-    name: parsed.data.eventName,
-    category: parsed.data.eventType,
-    eventDate: new Date(parsed.data.eventDate),
-    facultyRole: parsed.data.facultyRole,
-    details: parsed.data,
-  };
-  if (isDemoSession(request)) {
+  const parsed = eventWithCertificateSchema.safeParse(request.body);
+  if (!parsed.success) return reply.code(400).send({ error: { message: "Check the event details and attach a valid PDF, PNG, or JPG certificate up to 5 MB." } });
+  const { certificate, ...values } = parsed.data;
+  const demo = isDemoSession(request);
+  const saved = await withAchievementEvidence(certificate ? [{ ...certificate, kind: undefined }] : [], demo, async ([file]) => {
+    const details = {
+      ...values, certAvailable: Boolean(file) || values.certAvailable,
+      ...(file ? { certificateDocument: { fileName: file.fileName, storageKey: file.storageKey, mimeType: file.mimeType, sizeBytes: file.sizeBytes } } : {}),
+    };
+    const event = {
+      ownerId: user.id, mode: values.mode, name: values.eventName, category: values.eventType,
+      eventDate: new Date(values.eventDate), facultyRole: values.facultyRole, details,
+    };
+    if (!demo) return prisma.facultyEvent.create({ data: event });
     const entry = { id: randomUUID(), ...event };
     demoEvents.unshift(entry);
-    return reply.code(201).send({ data: entry });
-  }
-  return reply.code(201).send({ data: await prisma.facultyEvent.create({ data: event }) });
+    return entry;
+  });
+  if (!saved) throw new Error("Event could not be saved.");
+  return reply.code(201).send({ data: publicEvent(saved) });
+});
+
+app.get<{ Params: { id: string } }>("/api/v1/staff/events/:id/certificate", async (request, reply) => {
+  const user = await getCurrentUser(request);
+  if (!user || user.role === UserRole.STUDENT || user.role === UserRole.DEPARTMENT_ADMIN) return reply.code(403).send({ error: { message: "Faculty portal access required." } });
+  const demo = isDemoSession(request);
+  const { id } = request.params;
+  const event = demo
+    ? demoEvents.find((entry) => entry.id === id && entry.ownerId === user.id)
+    : await prisma.facultyEvent.findFirst({ where: { id, ownerId: user.id }, select: { details: true } });
+  const certificate = event ? getEventCertificate(event.details) : null;
+  const bytes = certificate ? await readAchievementEvidence(certificate.storageKey, demo) : undefined;
+  if (!certificate || !bytes) return reply.code(404).send({ error: { message: "Certificate not found." } });
+  return sendEvidence(reply, certificate, bytes);
 });
 
 app.post("/api/v1/achievements", { bodyLimit: evidenceBodyLimit }, async (request, reply) => {
@@ -1009,10 +1055,7 @@ app.get<{ Params: { id: string; documentId: string } }>("/api/v1/achievements/:i
   const bytes = document ? await readAchievementEvidence(document.storageKey, demo) : undefined;
   if (!document || !bytes) return reply.code(404).send({ error: { message: "File not found." } });
 
-  const encodedName = encodeURIComponent(Buffer.from(document.fileName).toString()).replace(/['()*]/g, (char) => `%${char.charCodeAt(0).toString(16)}`);
-  return reply.type(document.mimeType)
-    .header("Content-Disposition", `attachment; filename*=UTF-8''${encodedName}`)
-    .send(bytes);
+  return sendEvidence(reply, document, bytes);
 });
 
 app.patch("/api/v1/achievements/:id/review", async (request, reply) => {

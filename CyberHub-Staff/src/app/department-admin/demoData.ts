@@ -2,7 +2,7 @@ import "server-only";
 import type { AdminAccount, AdminData, Records } from "./adminData";
 
 export function makeWorkspace(department: AdminAccount["department"], demo: boolean): AdminData {
-  const settings = { defaultYear: demo ? "ay-26" : "", reviewAlerts: true, theme: "light" } as const;
+  const settings = { defaultYear: demo ? "ay-26" : "", reviewAlerts: true };
   const records: Records = { students: [], faculty: [], classes: [], subjects: [], allocations: [], "academic-years": [] };
   const data: AdminData = { records, settings, audit: [] };
   if (!demo) return data;

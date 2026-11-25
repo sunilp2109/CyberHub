@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
@@ -106,17 +107,12 @@ export default function LoginPage() {
     <main className={styles.loginWrapper}>
       <div className={styles.brandPanel}>
         <div className={styles.brand}>
-          <span className={styles.brandMark} aria-hidden="true"><IconLock /></span>
-          <span>CyberHub<span className={styles.brandSuffix}>ERP</span></span>
+          <Image src="/cyberhub-logo.png" alt="CyberHub" width={2172} height={724} sizes="190px" />
         </div>
         <div className={styles.brandCopy}>
           <p className={styles.department}>Cybersecurity Department</p>
           <p className={styles.brandHeading}>Your academic<br />workspace.</p>
           <p className={styles.brandDescription}>Track achievements, review submissions, and manage academic events.</p>
-        </div>
-        <div className={styles.artwork} aria-hidden="true">
-          <span /><span /><span />
-          <span className={styles.artworkMark}><IconLock /></span>
         </div>
       </div>
 

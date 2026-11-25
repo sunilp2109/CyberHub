@@ -93,7 +93,7 @@ export default function ProfilePage() {
 
       {/* ── Content ── */}
       <div className={styles.content}>
-        {error && <p role="alert" style={{ color: "#b42318", marginBottom: "1rem" }}>{error}</p>}
+        {error && <p role="alert" className={styles.formError}>{error}</p>}
         {!loaded && !error && <p role="status">Loading your profile...</p>}
         {loaded && <div className={styles.layout}>
 

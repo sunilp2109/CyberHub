@@ -109,7 +109,6 @@ export function SettingsPage() {
       notice("Preferences saved.");
     }}>
       <fieldset className={s.formPanel}><legend>Personal preferences</legend><div className={s.formGrid}>
-        <label className={s.field}><span>Appearance</span><select value={preferences.theme} onChange={(e) => setValues({ ...values, theme: e.target.value as typeof preferences.theme })}><option value="light">Light</option><option value="dark">Dark</option></select></label>
         {demo && <label className={s.field}><span>Default demo academic year</span><select value={preferences.defaultYear} onChange={(e) => setValues({ ...values, defaultYear: e.target.value })}>
           <option value="">No default</option>{data.records["academic-years"].map(({ id, name }) => <option value={id} key={id}>{name}</option>)}</select></label>}
         <div className={s.checks}><label><input type="checkbox" checked={preferences.reviewAlerts} onChange={(e) => setValues({ ...values, reviewAlerts: e.target.checked })} /> Document review reminders</label></div>

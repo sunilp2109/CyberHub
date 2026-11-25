@@ -2,13 +2,13 @@
   max-width: 56rem;
   margin-inline: auto;
   padding: 1.4rem var(--page-gutter) 2.5rem;
-  color: #0d1f3c;
+  color: var(--text);
 }
 
 .back {
   display: inline-block;
   margin-bottom: 1rem;
-  color: #0b7285;
+  color: var(--brand-blue-text);
   font-size: 0.85rem;
   font-weight: 700;
 }
@@ -16,14 +16,14 @@
 .card {
   --card-spacing: clamp(1rem, 3vw, 2rem);
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 1.05rem;
-  background: white;
-  box-shadow: 0 5px 20px rgb(13 31 60 / 5%);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
-.heading { padding: var(--card-spacing); border-bottom: 1px solid #e8eef4; }
+.heading { padding: var(--card-spacing); border-bottom: 1px solid var(--edge-separator); }
 .heading h2 { font-size: clamp(1.25rem, 2.8vw, 1.65rem); letter-spacing: -0.035em; }
-.heading p { margin-top: 0.5rem; color: #475569; font-size: 0.875rem; line-height: 1.5; }
+.heading p { margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5; }
 
 .fields {
   display: grid;
@@ -33,25 +33,25 @@
 }
 .field { display: grid; gap: 0.4rem; min-width: 0; border: 0; }
 .fullWidth { grid-column: 1 / -1; }
-.field :is(label, legend) { color: #334155; font-size: 0.84rem; font-weight: 700; }
-.field :is(label, legend) span { color: #b42318; }
+.field :is(label, legend) { color: var(--text-secondary); font-size: 0.84rem; font-weight: 700; }
+.field :is(label, legend) span { color: var(--negative); }
 .field :is(input:not([type="radio"], [type="checkbox"]), select, textarea) {
   width: 100%;
   min-width: 0;
   min-height: 44px;
   padding: 0.65rem 0.75rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--edge-control);
   border-radius: 0.6rem;
-  background: #f8fafc;
-  color: #0d1f3c;
+  background: var(--surface);
+  color: var(--text);
   font: inherit;
   font-size: 0.9rem;
 }
 .field textarea { resize: vertical; line-height: 1.5; }
-.field :is(input, textarea)::placeholder { color: #64748b; opacity: 1; }
-.field :is(input, select, textarea):focus { border-color: #0b7285; background: white; }
+.field :is(input, textarea)::placeholder { color: var(--text-muted); opacity: 1; }
+.field :is(input, select, textarea):focus { border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-halo); }
 .content :is(input, select, textarea, button, a):focus-visible, .chooseFile:focus-within {
-  outline: 2px solid #0b7285;
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 .radioGroup { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
@@ -62,13 +62,13 @@
   gap: 0.45rem;
   min-height: 44px;
   padding: 0.55rem 0.7rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--edge-control);
   border-radius: 0.6rem;
-  background: #f8fafc;
+  background: var(--surface-muted);
   cursor: pointer;
 }
-.radioGroup label:has(input:checked) { border-color: #0b7285; background: #e6f4f7; }
-.radioGroup input { accent-color: #0b7285; }
+.radioGroup label:has(input:checked) { border-color: var(--brand-blue-text); background: var(--surface-blue); }
+.radioGroup input { accent-color: var(--brand-blue-text); }
 
 .evidence {
   display: flex;
@@ -78,30 +78,30 @@
   gap: 0.8rem 1rem;
   margin: 0 var(--card-spacing) var(--card-spacing);
   padding: 0.9rem 1rem;
-  border: 1px solid #cbdfe8;
+  border: 1px solid var(--edge-blue);
   border-radius: 0.75rem;
-  background: #f2f9fb;
+  background: var(--surface-blue);
 }
 .evidence h3 { font-size: 0.88rem; }
-.evidence h3 span { margin-left: 0.3rem; color: #52647a; font-size: 0.75rem; font-weight: 400; }
-.evidence p { margin-top: 0.35rem; color: #475569; font-size: 0.78rem; line-height: 1.5; }
+.evidence h3 span { margin-left: 0.3rem; color: var(--text-secondary); font-size: 0.75rem; font-weight: 400; }
+.evidence p { margin-top: 0.35rem; color: var(--text-secondary); font-size: 0.78rem; line-height: 1.5; }
 .chooseFile, .cancel, .submit, .selectedFile button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
   padding: 0.5rem 0.9rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--edge-control);
   border-radius: 0.55rem;
-  background: white;
-  color: #0d1f3c;
+  background: var(--surface);
+  color: var(--text);
   font: inherit;
   font-size: 0.83rem;
   font-weight: 700;
   cursor: pointer;
 }
-.chooseFile { position: relative; color: #0d5266; flex: none; }
-.chooseFile:hover, .cancel:hover, .selectedFile button:hover { background: #e6f4f7; }
+.chooseFile { position: relative; color: var(--brand-blue-text); flex: none; }
+.chooseFile:hover, .cancel:hover, .selectedFile button:hover { background: var(--surface-blue); }
 .chooseFile input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .selectedFile {
   display: flex;
@@ -111,30 +111,30 @@
   font-size: 0.82rem;
 }
 .selectedFile span, .savedDocuments a { overflow-wrap: anywhere; }
-.savedDocuments { list-style: none; color: #0b7285; text-decoration: underline; font-size: 0.83rem; }
+.savedDocuments { list-style: none; color: var(--brand-blue-text); text-decoration: underline; font-size: 0.83rem; }
 .evidenceFiles { flex-basis: 100%; display: grid; gap: 0.45rem; list-style: none; }
 .evidenceFiles .selectedFile { justify-content: space-between; }
-.evidence .fileError { flex-basis: 100%; margin: 0; color: #9f1239; }
+.evidence .fileError { flex-basis: 100%; margin: 0; color: var(--negative); }
 .error, .message {
   margin: 0 var(--card-spacing) var(--card-spacing);
   padding: 0.7rem 0.8rem;
   border-radius: 0.55rem;
-  background: #fff1f2;
-  color: #9f1239;
+  background: var(--negative-surface);
+  color: var(--negative);
   font-size: 0.84rem;
   line-height: 1.5;
 }
-.message { margin-top: 1rem; background: #f8fafc; color: #334155; }
+.message { margin-top: 1rem; background: var(--surface-muted); color: var(--text-secondary); }
 .actions {
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 0.65rem;
   padding: 1rem var(--card-spacing);
-  border-top: 1px solid #e8eef4;
+  border-top: 1px solid var(--edge-separator);
 }
-.submit { border-color: #0d1f3c; background: #0d1f3c; color: white; }
-.submit:hover:not(:disabled) { background: #173b68; }
+.submit { border-color: var(--brand-blue); background: var(--brand-blue); color: var(--on-brand); }
+.submit:hover:not(:disabled) { background: var(--brand-blue-hover); }
 .submit:disabled { cursor: default; opacity: 0.65; }
 
 @media (max-width: 560px) {

@@ -54,7 +54,7 @@ export default function SingleEvidenceEntryForm({ editingId, config }: { editing
         if (!response.ok) throw new Error();
         const { data } = await response.json() as { data: SavedEntry[] };
         const record = data.find((item) => item.id === editingId && item.type === type);
-        if (!record || !["DRAFT", "SUBMITTED"].includes(record.status)) {
+        if (record?.status !== "SUBMITTED") {
           setError(`This ${entryLabel} is unavailable for editing.`);
           return;
         }

@@ -399,8 +399,8 @@ export default function ApprovalsPage() {
                   </div>
                   {panelRecord.status === "REJECTED" && panelRecord.approvals[0]?.comment && (
                     <div className={`${styles.infoItem} ${styles.infoValueFull}`} style={{ gridColumn: "1 / -1" }}>
-                      <div className={styles.infoLabel} style={{ color: "#dc2626" }}>Rejection Reason</div>
-                      <div className={styles.infoValue} style={{ color: "#dc2626", background: "#fff1f2", padding: "0.5rem 0.7rem", borderRadius: "6px" }}>{panelRecord.approvals[0]?.comment}</div>
+                      <div className={styles.infoLabel} style={{ color: "var(--negative)" }}>Rejection Reason</div>
+                      <div className={styles.infoValue} style={{ color: "var(--negative)", background: "var(--negative-surface)", padding: "0.5rem 0.7rem", borderRadius: "var(--radius-sm)" }}>{panelRecord.approvals[0]?.comment}</div>
                     </div>
                   )}
                 </div>
@@ -495,7 +495,7 @@ export default function ApprovalsPage() {
                 Achievement: <strong>{rejectTarget.title}</strong>
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="rejectReason">Rejection Reason <span style={{ color: "#dc2626" }}>*</span></label>
+                <label className={styles.formLabel} htmlFor="rejectReason">Rejection Reason <span style={{ color: "var(--negative)" }}>*</span></label>
                 <textarea
                   id="rejectReason"
                   className={`${styles.formControl} ${rejectError ? styles.fieldError : ""}`}

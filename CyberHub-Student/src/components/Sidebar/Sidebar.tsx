@@ -1,37 +1,10 @@
 "use client";
 
-import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-
-/* ── CyberHub Hexagon Logo ── */
-function HexLogo() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="50,4 93,27 93,73 50,96 7,73 7,27" fill="#0D1F3C"/>
-      <circle cx="50" cy="18" r="4" fill="#29B5D5"/>
-      <circle cx="78" cy="34" r="4" fill="#29B5D5"/>
-      <circle cx="78" cy="66" r="4" fill="#29B5D5"/>
-      <circle cx="50" cy="82" r="4" fill="#29B5D5"/>
-      <circle cx="22" cy="66" r="4" fill="#29B5D5"/>
-      <circle cx="22" cy="34" r="4" fill="#29B5D5"/>
-      <circle cx="50" cy="50" r="4" fill="#29B5D5"/>
-      <line x1="50" y1="18" x2="78" y2="34" stroke="#29B5D5" strokeWidth="2"/>
-      <line x1="78" y1="34" x2="78" y2="66" stroke="#29B5D5" strokeWidth="2"/>
-      <line x1="78" y1="66" x2="50" y2="82" stroke="#29B5D5" strokeWidth="2"/>
-      <line x1="50" y1="18" x2="22" y2="34" stroke="#29B5D5" strokeWidth="2"/>
-      <line x1="22" y1="34" x2="22" y2="66" stroke="#29B5D5" strokeWidth="2"/>
-      <line x1="22" y1="66" x2="50" y2="82" stroke="#29B5D5" strokeWidth="2"/>
-      <line x1="50" y1="18" x2="50" y2="50" stroke="#29B5D5" strokeWidth="2"/>
-      <line x1="50" y1="50" x2="22" y2="34" stroke="#29B5D5" strokeWidth="2"/>
-      <line x1="50" y1="50" x2="22" y2="66" stroke="#29B5D5" strokeWidth="2"/>
-      <line x1="50" y1="50" x2="78" y2="34" stroke="#29B5D5" strokeWidth="2"/>
-      <line x1="50" y1="50" x2="50" y2="82" stroke="#29B5D5" strokeWidth="2"/>
-    </svg>
-  );
-}
 
 const navItems = [
   {
@@ -92,16 +65,11 @@ export default function Sidebar() {
 
   return (
     <aside className={styles.sidebar} data-expanded={expanded}>
-      {/* Logo */}
       <div className={styles.logo}>
-        <div className={styles.logoIcon}><HexLogo /></div>
-        <div className={styles.logoText}>
-          <span className={styles.logoName}>
-            <span className={styles.logoCyber}>CYBER</span>
-            <span className={styles.logoHub}>HUB</span>
-          </span>
-          <span className={styles.logoSub}>Achievement Portal</span>
+        <div className={styles.logoArtwork}>
+          <Image src="/cyberhub-logo.png" alt="CyberHub" width={2172} height={724} sizes="170px" />
         </div>
+        <span className={styles.logoSub}>Achievement Portal</span>
       </div>
 
       {/* Nav */}

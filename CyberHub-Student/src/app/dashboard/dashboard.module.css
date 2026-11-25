@@ -1,0 +1,10 @@
+.workspace { padding: 24px var(--page-gutter) 3rem; }
+.hero { padding: clamp(1.15rem, 3vw, 2rem); border: 1px solid var(--edge-blue); border-radius: var(--radius-lg); background: var(--surface-blue); }
+.eyebrow { margin-bottom: .45rem; color: var(--brand-blue-text); font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.hero h2 { font-size: clamp(1.4rem, 2.8vw, 2rem); line-height: 1.2; letter-spacing: -.04em; }
+.intro { max-width: 40rem; margin-top: .6rem; color: var(--text-secondary); font-size: .9rem; line-height: 1.55; }
+.alert { margin-top: 1rem; padding: .75rem 1rem; border: 1px solid var(--negative-edge); border-radius: var(--radius-md); background: var(--negative-surface); color: var(--negative); font-size: .86rem; line-height: 1.5; }
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.metrics > div { padding: clamp(.75rem, 2vw, 1.1rem); background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.metrics dt { color: var(--text-secondary); font-size: .8rem; }
+.metrics dd { margin-top: .35rem; font-size: 1.5rem; font-weight: 750; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }

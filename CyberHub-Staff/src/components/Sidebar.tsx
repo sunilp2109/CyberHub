@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import styles from "./Sidebar.module.css";
@@ -80,15 +81,8 @@ export default function Sidebar() {
     <aside className={styles.sidebar} data-expanded={expanded}>
       {/* Brand */}
       <Link href="/dashboard" className={styles.brand}>
-        <div className={styles.brandIcon}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
-        </div>
-        <div className={styles.brandText}>
-          <div className={styles.brandName}>CyberHub</div>
-          <div className={styles.brandSub}>Faculty Portal</div>
-        </div>
+        <Image className={styles.brandArtwork} src="/cyberhub-logo.png" alt="CyberHub" width={2172} height={724} sizes="144px" />
+        <span className={styles.brandSub}>Faculty Portal</span>
       </Link>
 
       <button type="button" className={styles.menuToggle} aria-expanded={expanded} aria-controls="staff-navigation" onClick={() => setExpanded(!expanded)}>Menu</button>

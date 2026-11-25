@@ -40,7 +40,7 @@ export default function CompetitionForm({ editingId }: { editingId?: string }) {
         if (!response.ok) throw new Error();
         const payload = await response.json() as { data: RecordItem[] };
         const record = payload.data.find((item) => item.id === editingId && item.type === "COMPETITION");
-        if (!record || !["DRAFT", "SUBMITTED"].includes(record.status)) {
+        if (record?.status !== "SUBMITTED") {
           setError("This competition record is unavailable for editing.");
           return;
         }

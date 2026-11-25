@@ -1,7 +1,7 @@
 .shell {
   display: flex;
   min-height: 100vh;
-  background: #f1f4f9;
+  background: var(--page);
 }
 
 .main {
@@ -14,9 +14,9 @@
 
 /* ── Top Header Bar ── */
 .header {
-  height: 56px;
-  background: #ffffff;
-  border-bottom: 1.5px solid var(--border);
+  min-height: var(--portal-header-height);
+  background: var(--surface);
+  border-bottom: 1px solid var(--edge);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -62,7 +62,7 @@
   height: 36px;
   border-radius: 50%;
   border: 1.5px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,18 +80,18 @@
   height: 7px;
   background: #ef4444;
   border-radius: 50%;
-  border: 1.5px solid #fff;
+  border: 1.5px solid var(--surface);
 }
 
 .avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1a56db, #0d2347);
+  background: var(--surface-blue);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--brand-blue-text);
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;

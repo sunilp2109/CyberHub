@@ -3,33 +3,12 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import MainLayout from "@/components/MainLayout";
+import { SDG_LIST, eventsUrl, type EventMode } from "@/lib/facultyEvents";
 import s from "./add-event.module.css";
 
 /* ══════════════════════════════════════════════════
    TYPES & CONSTANTS
 ══════════════════════════════════════════════════ */
-type EventMode = "attended" | "conducted";
-
-const SDG_LIST = [
-  { n: 1,  name: "No Poverty"             },
-  { n: 2,  name: "Zero Hunger"            },
-  { n: 3,  name: "Good Health"            },
-  { n: 4,  name: "Quality Education"      },
-  { n: 5,  name: "Gender Equality"        },
-  { n: 6,  name: "Clean Water"            },
-  { n: 7,  name: "Affordable Energy"      },
-  { n: 8,  name: "Decent Work"            },
-  { n: 9,  name: "Industry & Innovation"  },
-  { n: 10, name: "Reduced Inequalities"   },
-  { n: 11, name: "Sustainable Cities"     },
-  { n: 12, name: "Responsible Consumption"},
-  { n: 13, name: "Climate Action"         },
-  { n: 14, name: "Life Below Water"       },
-  { n: 15, name: "Life on Land"           },
-  { n: 16, name: "Peace & Justice"        },
-  { n: 17, name: "Partnerships"           },
-];
-
 const FOCUS_AREAS = [
   "Cybersecurity", "Artificial Intelligence", "Research", "Innovation",
   "Entrepreneurship", "Skill Development", "Social Responsibility", "Sustainability",
@@ -47,17 +26,17 @@ interface FormData {
   description: string; objectives: string; keyTopics: string; eventOutcome: string;
   chiefGuest: string; numParticipants: string; targetAudience: string; coordinators: string;
   // Step 3
-  facultyRole: string; participationType: string; certAvailable: boolean;
+  facultyRole: string; participationType: string; certificate: File | null;
   organizingResponsibility: string;
   // Step 4
-  sdgs: number[]; focusAreas: string[];
+  sdgs: number[]; focusAreas: string[]; customFocusArea: string | null;
 }
 
 const INITIAL: FormData = {
   eventName:"", eventType:"", customEventType:"", organizer:"", department:"", eventDate:"", startTime:"", endTime:"", venue:"", format:"offline",
   description:"", objectives:"", keyTopics:"", eventOutcome:"", chiefGuest:"", numParticipants:"", targetAudience:"", coordinators:"",
-  facultyRole:"", participationType:"", certAvailable:false, organizingResponsibility:"",
-  sdgs:[], focusAreas:[],
+  facultyRole:"", participationType:"", certificate: null, organizingResponsibility:"",
+  sdgs:[], focusAreas:[], customFocusArea: null,
 };
 
 const STEPS = [
@@ -237,6 +216,8 @@ function Step2({ data, set, mode }: { data:FormData; set:(k:keyof FormData,v:unk
 
 /* ── Step 3: Participation ── */
 function Step3({ data, set, mode }: { data:FormData; set:(k:keyof FormData,v:unknown)=>void; mode:EventMode }) {
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [fileError, setFileError] = useState("");
   const attendedRoles      = ["Participant","Speaker","Panelist","Session Chair","Invited Expert","Observer"];
   const participationTypes = ["In-person","Virtual / Online","Hybrid"];
   const conductedRoles     = ["Coordinator","Co-Coordinator","Organizer","Resource Person","Mentor","Judge","Evaluator"];
@@ -273,15 +254,39 @@ function Step3({ data, set, mode }: { data:FormData; set:(k:keyof FormData,v:unk
               ))}
             </div>
           </div>
-          <div className={s.toggleRow}>
+          <div className={s.certificateRow}>
             <div>
-              <div className={s.toggleLabel}>Certificate Available</div>
-              <div className={s.toggleSub}>I received a certificate of participation / achievement</div>
+              <p className={s.fieldLabel}>Participation certificate (optional)</p>
+              <p className={s.certificateHint}>PDF, PNG, or JPG up to 5 MB.</p>
+              {data.certificate && <p className={s.certificateName}>{data.certificate.name}</p>}
             </div>
-            <label className={s.toggle}>
-              <input type="checkbox" checked={data.certAvailable} onChange={e=>set("certAvailable",e.target.checked)}/>
-              <span className={s.toggleSlider}/>
-            </label>
+            <div className={s.certificateActions}>
+              <input id="event-certificate" ref={fileInput} type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (!file) return;
+                  if (!["application/pdf", "image/png", "image/jpeg"].includes(file.type)
+                    || file.size === 0 || file.size > 5 * 1024 * 1024) {
+                    setFileError("Choose a PDF, PNG, or JPG file up to 5 MB.");
+                    return;
+                  }
+                  if (file.name.length > 200) {
+                    setFileError("Use a file name of up to 200 characters.");
+                    return;
+                  }
+                  setFileError("");
+                  set("certificate", file);
+                }} />
+              <button type="button" className={s.certificateButton} onClick={() => fileInput.current?.click()}>
+                {data.certificate ? "Replace certificate" : "Upload certificate"}
+              </button>
+              {data.certificate && <button type="button" className={s.certificateRemove} onClick={() => {
+                set("certificate", null);
+                setFileError("");
+              }}>Remove</button>}
+            </div>
+            {fileError && <p className={s.certificateError} role="alert">{fileError}</p>}
           </div>
         </>
       ) : (
@@ -368,18 +373,48 @@ function Step4({ data, set }: { data:FormData; set:(k:keyof FormData,v:unknown)=
             return (
               <button key={f} type="button"
                 className={`${s.focusChip} ${active?s.focusChipActive:""}`}
+                aria-pressed={active}
                 onClick={()=>toggleFocus(f)}>
                 {active && <Ico.Check/>} {f}
               </button>
             );
           })}
+          <button type="button" className={`${s.focusChip} ${data.customFocusArea !== null ? s.focusChipActive : ""}`}
+            aria-pressed={data.customFocusArea !== null}
+            onClick={() => set("customFocusArea", data.customFocusArea === null ? "" : null)}>
+            {data.customFocusArea !== null && <Ico.Check />} Other
+          </button>
         </div>
+        {data.customFocusArea !== null && (
+          <div className={s.customFocusField}>
+            <label className={s.fieldLabel} htmlFor="custom-focus-area">Specify focus area <span className={s.required} aria-hidden="true">*</span></label>
+            <input id="custom-focus-area" type="text" className={s.fieldInput} value={data.customFocusArea}
+              onChange={(event) => set("customFocusArea", event.target.value)} maxLength={100}
+              placeholder="e.g. Digital Accessibility" aria-describedby="custom-focus-help" required />
+            <p id="custom-focus-help" className={s.customFocusHelp}>Enter a focus area to continue. Up to 100 characters.</p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 /* ── Step 6: Review ── */
+function getFocusAreas(focusAreas: string[], customFocusArea: string | null) {
+  const custom = customFocusArea?.trim();
+  return custom && !focusAreas.some((area) => area.toLowerCase() === custom.toLowerCase())
+    ? [...focusAreas, custom] : focusAreas;
+}
+
+function encodeCertificate(file: File) {
+  return new Promise<{ fileName: string; mimeType: string; content: string }>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ fileName: file.name, mimeType: file.type, content: String(reader.result).split(",")[1] });
+    reader.onerror = () => reject(new Error("Unable to read the certificate. Try selecting the file again."));
+    reader.readAsDataURL(file);
+  });
+}
+
 function Step6({ data, mode, goTo }: { data:FormData; mode:EventMode; goTo:(s:number)=>void }) {
   const field = (label:string, val:string|boolean|undefined) => val ? (
     <div className={s.reviewRow}>
@@ -436,8 +471,18 @@ function Step6({ data, mode, goTo }: { data:FormData; mode:EventMode; goTo:(s:nu
           <div className={s.reviewBody}>
             {field("Faculty Role",        data.facultyRole        || "—")}
             {mode==="attended" && field("Participation Type", data.participationType || "—")}
-            {mode==="attended" && field("Certificate",        data.certAvailable ? "Available" : "Not Available")}
+            {mode==="attended" && field("Certificate",        data.certificate?.name ?? "No file attached")}
             {mode==="conducted" && field("Responsibility",    data.organizingResponsibility || "—")}
+          </div>
+        </div>
+
+        <div className={s.reviewSection}>
+          <div className={s.reviewSectionHeader}>
+            Institutional Focus Areas
+            <button className={s.reviewEditBtn} onClick={()=>goTo(5)}>Edit</button>
+          </div>
+          <div className={s.reviewBody}>
+            {field("Focus Areas", getFocusAreas(data.focusAreas, data.customFocusArea).join(", ") || "None selected")}
           </div>
         </div>
 
@@ -462,7 +507,8 @@ export default function AddEventPage() {
   const setField = (k:keyof FormData, v:unknown) => setData(p=>({...p,[k]:v}));
   const lastStep = STEPS.length;
   const eventType = getEventType(data);
-  const availableStep = mode && eventType ? lastStep : 1;
+  const focusAreaValid = data.customFocusArea === null || data.customFocusArea.trim().length > 0;
+  const availableStep = mode && eventType ? (focusAreaValid ? lastStep : lastStep - 1) : 1;
   const stepTitle = useRef<HTMLHeadingElement>(null);
   const goTo = (nextStep: number) => {
     if (nextStep < 1 || nextStep > availableStep || nextStep === step) return;
@@ -479,7 +525,7 @@ export default function AddEventPage() {
       ...current,
       facultyRole: nextMode === "conducted" ? "Coordinator" : "",
       participationType: "",
-      certAvailable: false,
+      certificate: null,
       organizingResponsibility: "",
       chiefGuest: "",
       numParticipants: "",
@@ -489,15 +535,22 @@ export default function AddEventPage() {
   };
 
   const saveEvent = async () => {
-    if (!mode || saving) return;
+    if (!mode || !focusAreaValid || saving) return;
     setSaveError("");
     setSaving(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1/staff/events`, {
+      const { customFocusArea, certificate, ...event } = data;
+      const certificateUpload = certificate ? await encodeCertificate(certificate).catch(() => null) : undefined;
+      if (certificateUpload === null) {
+        setSaveError("Unable to read the certificate. Select it again and retry.");
+        return;
+      }
+      const response = await fetch(eventsUrl, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, mode, eventType }),
+        body: JSON.stringify({ ...event, mode, eventType, focusAreas: getFocusAreas(event.focusAreas, customFocusArea),
+          certAvailable: Boolean(certificateUpload), certificate: certificateUpload }),
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => null) as { error?: { message?: string } } | null;
@@ -641,7 +694,7 @@ export default function AddEventPage() {
           ) : (
             <button id="submit-btn" type="button" className={s.navSubmitBtn}
               disabled={saving} onClick={() => void saveEvent()}>
-              <Ico.Submit/> {saving ? "Saving?" : "Save event"}
+              <Ico.Submit/> {saving ? "Saving…" : "Save event"}
             </button>
           )}
         </div>

@@ -3,20 +3,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MainLayout from "@/components/MainLayout";
+import { eventCertificateUrl, eventDateFormat, eventsUrl, type EventMode, type FacultyEvent } from "@/lib/facultyEvents";
+import EventDetailsDialog from "./EventDetailsDialog";
 import styles from "./events.module.css";
 
-type EventTab = "attended" | "conducted";
-
-interface FacultyEvent {
-  id: string;
-  eventDate: string;
-  name: string;
-  category: string;
-  facultyRole: string;
-  mode: EventTab;
-}
-
-const dateFormat = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "UTC" });
 const DATE_FILTERS = ["Last 6 Months", "Last 3 Months", "This Year", "All Time"];
 const PER_PAGE = 3;
 
@@ -62,7 +52,7 @@ const IcoChevronDown = () => (
 /* ── Status Badge ── */
 export default function EventsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab]     = useState<EventTab>("attended");
+  const [activeTab, setActiveTab]     = useState<EventMode>("attended");
   const [search, setSearch]           = useState("");
   const [dateFilter, setDateFilter]   = useState("All Time");
   const [catFilter, setCatFilter]     = useState("All");
@@ -71,11 +61,12 @@ export default function EventsPage() {
   const [showCatDrop, setShowCatDrop]   = useState(false);
 
   const [events, setEvents] = useState<FacultyEvent[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<FacultyEvent | null>(null);
   const [loadState, setLoadState] = useState<"loading" | "error" | "ready">("loading");
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1/staff/events`, {
+    void fetch(eventsUrl, {
       credentials: "include", cache: "no-store", signal: controller.signal,
     }).then(async (response) => {
       if (!response.ok) throw new Error();
@@ -105,7 +96,7 @@ export default function EventsPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const handleTabChange = (tab: EventTab) => { setActiveTab(tab); setPage(1); };
+  const handleTabChange = (tab: EventMode) => { setActiveTab(tab); setPage(1); };
   const handleSearch    = (val: string)   => { setSearch(val);    setPage(1); };
   const handleCat       = (cat: string)   => { setCatFilter(cat); setPage(1); setShowCatDrop(false); };
   const handleDate      = (d: string)     => { setDateFilter(d);  setPage(1); setShowDateDrop(false); };
@@ -223,8 +214,15 @@ export default function EventsPage() {
               <tbody>
                 {paginated.map((ev) => (
                   <tr key={ev.id}>
-                    <td className={styles.dateCell}>{dateFormat.format(new Date(ev.eventDate))}</td>
-                    <td><div className={styles.eventName}>{ev.name}</div></td>
+                    <td className={styles.dateCell}>{eventDateFormat.format(new Date(ev.eventDate))}</td>
+                    <td>
+                      <button type="button" className={styles.eventName} aria-haspopup="dialog" onClick={() => setSelectedEvent(ev)}>
+                        {ev.name}
+                      </button>
+                      {ev.certificate && <a className={styles.certificateDownload}
+                        href={eventCertificateUrl(ev.id)}
+                        aria-label={`Download certificate for ${ev.name}`} title={ev.certificate.fileName}>Download certificate</a>}
+                    </td>
                     <td><span className={styles.categoryBadge}>{ev.category}</span></td>
                     <td><span className={styles.roleBadge}>{ev.facultyRole}</span></td>
                   </tr>
@@ -269,6 +267,7 @@ export default function EventsPage() {
       {(showDateDrop || showCatDrop) && (
         <div style={{ position:"fixed", inset:0, zIndex:99 }} onClick={() => { setShowDateDrop(false); setShowCatDrop(false); }} />
       )}
+      {selectedEvent && <EventDetailsDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} />}
     </MainLayout>
   );
 }

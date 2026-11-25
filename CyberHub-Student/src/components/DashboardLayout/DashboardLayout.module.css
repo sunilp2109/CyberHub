@@ -1,7 +1,8 @@
 .shell {
+  --portal-header-divider: var(--edge);
   display: flex;
   min-height: 100vh;
-  background: #F4F7FA;
+  background: var(--page);
 }
 
 .main {
@@ -9,7 +10,7 @@
   margin-left: 210px;
   min-height: 100vh;
   overflow-x: hidden;
-  background: #F4F7FA;
+  background: var(--page);
 }
 
 @media (max-width: 760px) {

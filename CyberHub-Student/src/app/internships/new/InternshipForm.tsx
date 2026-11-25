@@ -43,7 +43,7 @@ export default function InternshipForm({ editingId }: { editingId?: string }) {
         if (!response.ok) throw new Error();
         const { data } = await response.json() as { data: SavedInternship[] };
         const internship = data.find(({ id, type }) => id === editingId && type === "INTERNSHIP");
-        if (internship && ["DRAFT", "SUBMITTED"].includes(internship.status)) setRecord(internship);
+        if (internship?.status === "SUBMITTED") setRecord(internship);
         else setError("This internship is unavailable for editing.");
       })
       .catch(() => {

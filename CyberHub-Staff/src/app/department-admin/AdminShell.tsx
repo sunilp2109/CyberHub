@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { adminHref, getSection, links, modules, navGroups, type AdminAccount, type AdminData, type AuditEntry } from "./adminData";
@@ -17,15 +18,12 @@ const icons: Record<string, string> = {
   book: "M12 5v16 M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2z",
   allocation: "M4 7h16m-4-4 4 4-4 4 M20 17H4m4-4-4 4 4 4",
   badge: "M12 2l3 3 4 1 1 4 2 3-3 3-1 4-4 1-3 1-3-3-4-1-1-4-1-3 3-3 1-4 4-1z M8 12l3 3 5-6",
-  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4",
   file: "M5 3h9l5 5v13H5z M14 3v6h5 M8 13h8m-8 4h8",
   chart: "M3 3v18h18 M8 16v-5m5 5V7m5 9V4",
   history: "M3 12a9 9 0 1 0 3-7 M3 3v5h5 M12 7v5l3 2",
   settings: "M4 6h16M4 12h16M4 18h16 M9 4v4m6 2v4m-5 2v4",
   search: "M16 10a6 6 0 1 1-12 0 6 6 0 0 1 12 0m-2 4 6 6",
   bell: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4",
-  moon: "M20 15a8 8 0 0 1-11-11 8 8 0 1 0 11 11",
-  sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M19 5l-1 1M6 18l-1 1",
   menu: "M4 6h16M4 12h16M4 18h16",
   chevron: "m9 6 6 6-6 6",
   down: "m6 9 6 6 6-6",
@@ -118,7 +116,6 @@ export default function AdminShell({ account, demo, initial, children }: { accou
         setData({ records, audit: Array.isArray(saved?.audit) ? saved.audit : initial.audit, settings: { ...initial.settings,
           defaultYear: demo && (settings.defaultYear === "" || records["academic-years"].some(({ id }) => id === settings.defaultYear)) ? settings.defaultYear ?? "" : initial.settings.defaultYear,
           reviewAlerts: typeof settings.reviewAlerts === "boolean" ? settings.reviewAlerts : initial.settings.reviewAlerts,
-          theme: settings.theme === "dark" ? "dark" : "light",
           avatar: typeof settings.avatar === "string" && settings.avatar.length <= 350_000 && /^data:image\/(png|jpeg);base64,/.test(settings.avatar) ? settings.avatar : undefined,
         } });
       } catch {
@@ -215,13 +212,16 @@ export default function AdminShell({ account, demo, initial, children }: { accou
   const pending = achievements.data?.filter(({ status }) => status === "SUBMITTED").reduce((count, row) => count + (row.documents?.length ?? 0), 0);
   return (
     <AdminContext.Provider value={{ account, demo, data, directory, achievements, update, notice: setMessage, logout, signingOut }}>
-      <div className={styles.shell} data-theme={data.settings.theme} data-collapsed={collapsed}>
+      <div className={styles.shell} data-collapsed={collapsed}>
         <a className={styles.skipLink} href="#admin-content">Skip to content</a>
         {mobileOpen && <button className={styles.scrim} aria-label="Close navigation" tabIndex={-1} onClick={() => setMobileOpen(false)} />}
         <aside ref={sidebar} className={styles.sidebar} data-open={mobileOpen} id="admin-navigation">
           <Link href="/department-admin" className={styles.brand} aria-label="CyberHub ERP dashboard" onClick={() => setMobileOpen(false)}>
-            <span className={styles.brandMark}><Icon name="shield" size={20} /></span>
-            <span className={styles.navText}><strong>CyberHub ERP</strong><small>Department Admin</small></span>
+            <span className={styles.brandMark}><Image src="/icon.png" width={42} height={42} alt="" /></span>
+            <span className={styles.navText}>
+              <Image className={styles.brandArtwork} src="/cyberhub-logo.png" alt="" width={2172} height={724} sizes="144px" />
+              <small>Department Admin</small>
+            </span>
           </Link>
           <button className={styles.collapse} type="button" aria-expanded={!collapsed} aria-controls="admin-navigation"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} onClick={() => setCollapsed(!collapsed)}>
@@ -253,10 +253,6 @@ export default function AdminShell({ account, demo, initial, children }: { accou
             <div className={styles.topActions}>
               <button className={styles.searchButton} type="button" onClick={() => { setSearch(""); setSearchOpen(true); }} aria-label="Search administration">
                 <Icon name="search" size={17} /><span>Search</span><kbd>Ctrl K</kbd>
-              </button>
-              <button className={styles.iconButton} type="button" aria-label={data.settings.theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
-                onClick={() => update((state) => ({ ...state, settings: { ...state.settings, theme: state.settings.theme === "light" ? "dark" : "light" } }))}>
-                <Icon name={data.settings.theme === "light" ? "moon" : "sun"} />
               </button>
               <div className={styles.menuAnchor}>
                 <button className={styles.iconButton} type="button" aria-label="Notifications" aria-expanded={menu === "notifications"}

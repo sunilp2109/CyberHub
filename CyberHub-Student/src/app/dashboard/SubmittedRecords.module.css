@@ -1,0 +1,6 @@
+.section { margin-top: 28px; color: var(--text); }
+.heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 14px; }
+.heading h2 { font-size: 1.12rem; }
+.grid > article { min-width: 0; overflow-wrap: anywhere; }
+.description { white-space: pre-wrap; margin-top: 8px !important; }
+.message { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 18px 16px; color: var(--text-secondary); font-size: .86rem; background: var(--surface); border: 1px solid var(--edge); border-radius: 14px; }

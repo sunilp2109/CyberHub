@@ -8,11 +8,12 @@
   gap: 1rem;
   padding: clamp(1.15rem, 3vw, 2rem);
   border-radius: var(--radius-lg);
-  background: linear-gradient(115deg, #0d2347, #214f89);
-  color: white;
+  background: var(--surface-blue);
+  border: 1px solid var(--edge-blue);
+  color: var(--text);
 }
 .hero h1 { font-size: clamp(1.65rem, 3vw, 2.25rem); line-height: 1.15; letter-spacing: -0.045em; }
-.hero p { margin-top: 0.55rem; color: #d5e3fa; font-size: 0.875rem; line-height: 1.5; }
+.hero p { margin-top: 0.55rem; color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5; }
 .primaryLink {
   display: inline-flex;
   align-items: center;
@@ -20,14 +21,13 @@
   min-height: 2.75rem;
   padding: 0.65rem 1rem;
   border-radius: var(--radius-md);
-  background: white;
-  color: var(--primary-dark);
+  background: var(--brand-blue);
+  color: var(--on-brand);
   font-size: 0.85rem;
   font-weight: 700;
 }
-.primaryLink:hover { background: #e8efff; color: var(--primary-dark); text-decoration: none; }
+.primaryLink:hover { background: var(--brand-blue-hover); color: var(--on-brand); text-decoration: none; }
 .workspace a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.hero a:focus-visible { outline-color: white; }
 
 .metrics {
   display: grid;
@@ -40,13 +40,13 @@
   min-width: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: white;
-  box-shadow: 0 2px 8px rgb(15 23 42 / 4%);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
 .metrics > div { padding: 1rem 1.25rem; }
 .metrics dt { color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; }
 .metrics dd { margin-top: 0.35rem; font-size: 1.85rem; line-height: 1.1; letter-spacing: -0.045em; font-weight: 750; }
-.pendingCount { color: #92400e; }
+.pendingCount { color: var(--caution); }
 
 .columns { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
 .panelHeader {
@@ -71,6 +71,7 @@
 }
 .queue li > div { flex: 1 1 12rem; min-width: 0; }
 .queue li + li, .shortcuts li + li { border-top: 1px solid var(--border); }
+.queue li:hover, .shortcuts li:hover { background: var(--surface-blue); }
 .submissionTitle { font-size: 0.9rem; line-height: 1.4; font-weight: 650; overflow-wrap: anywhere; }
 .meta { margin-top: 0.25rem; line-height: 1.5; }
 .meta, .queue time, .shortcuts span, .empty, .dataNote { font-size: 0.8rem; color: var(--text-secondary); }

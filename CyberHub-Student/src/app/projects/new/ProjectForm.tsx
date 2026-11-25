@@ -34,7 +34,7 @@ export default function ProjectForm({ editingId }: { editingId?: string }) {
         if (!response.ok) throw new Error();
         const { data } = await response.json() as { data: SavedProject[] };
         const project = data.find(({ id, type }) => id === editingId && type === "PROJECT");
-        if (project && ["DRAFT", "SUBMITTED"].includes(project.status)) setRecord(project);
+        if (project?.status === "SUBMITTED") setRecord(project);
         else setError("This project is unavailable for editing.");
       })
       .catch(() => {

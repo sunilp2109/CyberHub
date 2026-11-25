@@ -29,18 +29,18 @@
   min-height: 2.75rem;
   padding: 0.65rem 1rem;
   border-radius: var(--radius-md);
-  background: var(--primary-dark);
-  color: white;
+  background: var(--brand-blue);
+  color: var(--on-brand);
   font-size: 0.85rem;
   font-weight: 700;
 }
-.reviewLink:hover { background: var(--primary); color: white; text-decoration: none; }
+.reviewLink:hover { background: var(--brand-blue-hover); color: var(--on-brand); text-decoration: none; }
 
 .card {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 2px 8px rgb(15 23 42 / 4%);
+  box-shadow: var(--shadow-sm);
   min-width: 0;
 }
 
@@ -49,9 +49,9 @@
   width: min(100%, 23rem);
   min-height: 2.75rem;
   padding: 0.65rem 0.85rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--edge-control);
   border-radius: var(--radius-md);
-  background: #f8fafc;
+  background: var(--surface);
   color: var(--text-primary);
   font: inherit;
   font-size: 0.875rem;
@@ -63,9 +63,9 @@
 .table { width: 100%; min-width: 36rem; border-collapse: collapse; text-align: left; }
 .table th,
 .table td { padding: 0.95rem 1.25rem; border-top: 1px solid var(--border); }
-.table th { background: #f8fafc; font-size: 0.78rem; color: var(--text-secondary); }
+.table th { background: var(--surface-muted); font-size: 0.78rem; color: var(--text-secondary); }
 .table td { font-size: 0.875rem; }
-.table tbody tr:hover { background: #f8fbff; }
+.table tbody tr:hover { background: var(--surface-blue); }
 
 .studentLink {
   display: inline-flex;
@@ -88,8 +88,8 @@
   width: 2.55rem;
   aspect-ratio: 1;
   border-radius: 0.8rem;
-  background: #e8efff;
-  color: #2449a1;
+  background: var(--surface-blue);
+  color: var(--brand-blue-text);
   font-size: 0.85rem;
   font-weight: 750;
 }
@@ -97,8 +97,8 @@
   display: inline-block;
   padding: 0.3rem 0.5rem;
   border-radius: 0.4rem;
-  background: #eef2f7;
-  color: #334155;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
   font-size: 0.74rem;
   font-weight: 650;
 }
@@ -122,14 +122,15 @@
   padding: clamp(1rem, 3vw, 2.15rem);
   margin-bottom: 1.25rem;
   border-radius: var(--radius-lg);
-  background: linear-gradient(115deg, #0d2347, #214f89);
-  color: white;
+  background: var(--surface-blue);
+  border: 1px solid var(--edge-blue);
+  color: var(--text);
   overflow-wrap: anywhere;
 }
-.profileHeader p { margin-top: 0.45rem; color: #d5e3fa; font-size: 0.875rem; line-height: 1.5; }
+.profileHeader p { margin-top: 0.45rem; color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5; }
 .profileAvatar {
   width: clamp(3.1rem, 7vw, 4.6rem);
-  background: #e8efff;
+  background: var(--surface-blue);
   font-size: clamp(1.05rem, 2vw, 1.5rem);
 }
 
@@ -161,17 +162,17 @@
 .status {
   padding: 0.3rem 0.6rem;
   border-radius: 999px;
-  background: #eef2f7;
-  color: #334155;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
   font-size: 0.74rem;
   font-weight: 700;
 }
-.status[data-status="APPROVED"] { background: #e7f6ed; color: #166534; }
-.status[data-status="SUBMITTED"] { background: #fff4db; color: #854d0e; }
-.status[data-status="REJECTED"] { background: #ffeded; color: #9f1239; }
+.status[data-status="APPROVED"] { background: var(--positive-surface); color: var(--positive); }
+.status[data-status="SUBMITTED"] { background: var(--caution-surface); color: var(--caution); }
+.status[data-status="REJECTED"] { background: var(--negative-surface); color: var(--negative); }
 .description { margin-top: 0.7rem; color: var(--text-secondary); font-size: 0.875rem; line-height: 1.6; }
 .attachments { padding-top: 0.85rem; border-top: 1px solid var(--border); }
-.file { margin-top: 0.6rem; background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.file { margin-top: 0.6rem; background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-md); }
 .file summary {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
@@ -187,8 +188,8 @@
 .file summary::-webkit-details-marker { display: none; }
 .file summary::after { content: ""; width: 0.45rem; height: 0.45rem; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
 .file[open] summary::after { transform: rotate(225deg); }
-.file summary:hover { background: #eff4fd; }
-.fileType { padding: 0.4rem; border-radius: 0.35rem; background: #e8efff; color: #2449a1; font-size: 0.67rem; }
+.file summary:hover { background: var(--surface-blue); }
+.fileType { padding: 0.4rem; border-radius: 0.35rem; background: var(--surface-blue); color: var(--brand-blue-text); font-size: 0.67rem; }
 .fileName { overflow-wrap: anywhere; }
 .fileSize { color: var(--text-secondary); white-space: nowrap; font-size: 0.75rem; font-weight: 500; }
 .file .profileInfo { margin: 0; padding: 0.75rem; border-top: 1px solid var(--border); }

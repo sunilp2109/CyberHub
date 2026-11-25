@@ -1,6 +1,8 @@
+import { resolve } from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  turbopack: { root: resolve(__dirname, "..") },
   poweredByHeader: false,
   async headers() {
     return [{

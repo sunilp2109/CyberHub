@@ -412,15 +412,38 @@ test("logs attended and conducted events and restricts them to their owner", asy
     format: "hybrid", department: "", venue: "", startTime: "09:00", endTime: "10:00",
     objectives: "", keyTopics: "", eventOutcome: "", chiefGuest: "", numParticipants: "15",
     targetAudience: "", coordinators: "", participationType: "Hybrid", certAvailable: false,
-    organizingResponsibility: "", sdgs: [], focusAreas: [],
+    organizingResponsibility: "", sdgs: [], focusAreas: ["Cybersecurity", "Digital Accessibility"],
   };
+  const pdf = Buffer.from("%PDF-1.4\n%%EOF");
+  const certificate = { fileName: "Participation Certificate.pdf", mimeType: "application/pdf", content: pdf.toString("base64") };
+  let certificateUrl = "";
   for (const mode of ["attended", "conducted"]) {
-    const created = await app.inject({ method: "POST", url, headers: faculty, payload: { ...details, mode } });
+    const created = await app.inject({ method: "POST", url, headers: faculty,
+      payload: { ...details, mode, ...(mode === "attended" ? { certificate } : {}) } });
     assert.equal(created.statusCode, 201);
     assert.equal(created.json().data.details.mode, mode);
+    if (mode === "attended") {
+      const event = created.json().data;
+      assert.equal(event.details.certAvailable, true);
+      assert.equal(event.certificate.fileName, certificate.fileName);
+      assert.equal(event.details.certificateDocument, undefined);
+      certificateUrl = `${url}/${event.id}/certificate`;
+    }
   }
+  const download = await app.inject({ url: certificateUrl, headers: faculty });
+  assert.equal(download.statusCode, 200);
+  assert.deepEqual(download.rawPayload, pdf);
+  assert.match(String(download.headers["content-disposition"]), /Participation%20Certificate\.pdf/);
+  assert.equal((await app.inject({ url: certificateUrl, headers: admin })).statusCode, 404);
+  assert.equal((await app.inject({ url: certificateUrl, headers: student })).statusCode, 403);
+  assert.equal((await app.inject({ method: "POST", url, headers: faculty, payload: {
+    ...details, mode: "attended", certificate: { ...certificate, mimeType: "image/png" },
+  } })).statusCode, 400);
   assert.equal((await app.inject({ method: "POST", url, headers: faculty, payload: { ...details, mode: "attended", endTime: "07:00" } })).statusCode, 400);
   assert.equal((await app.inject({ url, headers: student })).statusCode, 403);
   assert.equal((await app.inject({ url, headers: admin })).json().data.length, 0);
-  assert.equal((await app.inject({ url, headers: faculty })).json().data.length, 2);
+  const saved = (await app.inject({ url, headers: faculty })).json().data;
+  assert.equal(saved.length, 2);
+  assert.equal(saved.find((event: { mode: string }) => event.mode === "attended").certificate.fileName, certificate.fileName);
+  for (const event of saved) assert.deepEqual(event.details.focusAreas, details.focusAreas);
 });
