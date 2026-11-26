@@ -1,19 +1,20 @@
-.loginWrapper {
+.loginPage {
   display: grid;
-  grid-template-columns: minmax(23rem, 0.92fr) minmax(0, 1.08fr);
+  grid-template-rows: 1fr auto;
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--page);
   color-scheme: light;
 }
 
+.loginWrapper {
+  display: grid;
+  grid-template-columns: minmax(23rem, 0.92fr) minmax(0, 1.08fr);
+}
+
 .brandPanel {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  gap: clamp(1.4rem, 4vh, 2.5rem);
-  overflow: hidden;
+  display: grid;
+  place-items: center;
   padding: clamp(2rem, 5vw, 5rem);
   padding-bottom: calc(clamp(2rem, 5vw, 5rem) + 2rem);
   color: var(--text);
@@ -21,23 +22,21 @@
   border-inline-end: 1px solid var(--edge);
 }
 
-.brand {
-  width: 190px;
+.brandContent {
+  width: min(100%, 31rem);
+  container-type: inline-size;
+}
+
+.brandLogo {
+  display: block;
+  width: 12rem;
   max-width: 100%;
-  height: 50px;
-  position: relative;
-  overflow: hidden;
-  border-radius: 0.65rem;
-  margin-inline-start: -8px;
-}
-.brand img {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: 100%;
   height: auto;
-  transform: translate(-50%, -50%);
+  /* Align the visible artwork with the copy despite the PNG's transparent inset. */
+  margin-inline-start: -0.6rem;
 }
-.brandCopy { width: 100%; max-width: 35rem; min-width: 0; }
+
+.brandCopy { margin-top: 1.15rem; }
 .department {
   color: var(--brand-blue-text);
   font-size: 0.78rem;
@@ -46,13 +45,15 @@
   text-transform: uppercase;
 }
 .brandHeading {
-  margin-top: 0.85rem;
-  font-size: clamp(2.65rem, 4.8vw, 4.75rem);
-  font-weight: 750;
-  letter-spacing: -0.065em;
-  line-height: 1;
+  margin-top: 0.75rem;
+  font-family: system-ui, "Segoe UI", sans-serif;
+  font-size: min(clamp(2.25rem, 4.4vw, 4.25rem), 12.85cqi);
+  letter-spacing: -0.045em;
+  line-height: 1.06;
 }
-.brandDescription { max-width: 24rem; margin-top: 1.25rem; color: var(--text-secondary); line-height: 1.65; }
+.brandHeading strong { font-weight: 700; }
+.brandHeading span { white-space: nowrap; }
+.brandDescription { max-width: 24rem; margin-top: 1rem; color: var(--text-secondary); line-height: 1.65; }
 
 .formPanel { display: grid; place-items: center; padding: clamp(1rem, 5vw, 4.5rem); }
 .formContainer {
@@ -78,11 +79,12 @@
   border-radius: 0.75rem;
   background: var(--surface);
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 .inputWrapper input::placeholder { color: var(--text-muted); }
 .inputWrapper input:focus { border-color: var(--brand-blue); background: var(--surface); }
 .inputWrapper .passwordInput { padding-right: 3rem; }
+.passwordInput::-ms-reveal { display: none; }
 .inputIcon, .eyeButton { position: absolute; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
 .inputIcon { left: 0.95rem; display: grid; pointer-events: none; }
 .eyeButton {
@@ -136,13 +138,25 @@
 .errorMsg svg { vertical-align: middle; }
 .helpText { margin-top: 1.4rem; padding-top: 1.15rem; border-top: 1px solid var(--edge); color: var(--text-secondary); font-size: 0.82rem; line-height: 1.65; text-align: center; }
 .helpText a { color: var(--brand-blue-hover); font-weight: 650; }
-.designCredit { margin-top: 0.85rem; color: var(--text-muted); font-size: 0.75rem; text-align: center; }
+.pageFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.25rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--edge);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-align: center;
+}
 
 @media (max-width: 760px) {
   .loginWrapper { grid-template-columns: minmax(0, 1fr); align-content: start; }
-  .brandPanel { padding: 0.75rem 1.25rem; border-inline-end: 0; border-bottom: 1px solid var(--edge); }
+  .brandPanel { padding: 1rem 1rem 0; background: transparent; border: 0; }
+  .brandLogo { margin-inline: auto; }
   .brandCopy { display: none; }
-  .formPanel { padding: 1.5rem 1rem 2rem; }
+  .formPanel { padding: 0.65rem 1rem 2rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

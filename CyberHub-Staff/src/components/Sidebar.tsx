@@ -38,6 +38,12 @@ const IcoStudents = () => (
     <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </svg>
 );
+const IcoDocuments = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <path d="M14 2v6h6M8 13h8M8 17h8" />
+  </svg>
+);
 const IcoProfile = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -57,6 +63,7 @@ const NAV_ITEMS = [
   { href: "/add-event", label: "Add Event",  icon: <IcoAddEvent />  },
   { href: "/approvals",        label: "Approvals",        icon: <IcoApprovals /> },
   { href: "/student-records", label: "Student Records", icon: <IcoStudents />  },
+  { href: "/student-documents", label: "Student Documents", icon: <IcoDocuments /> },
 ];
 
 export default function Sidebar() {

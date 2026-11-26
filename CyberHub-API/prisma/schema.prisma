@@ -98,6 +98,9 @@ model Student {
   programme    String
   batch        String
   semester     Int
+  academicYear String?
+  yearOfStudy  Int?
+  classSection String?
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   departmentRef Department?   @relation(fields: [departmentId], references: [id])
   achievements Achievement[]
@@ -125,6 +128,8 @@ model Achievement {
   metadata     Json?
   status       AchievementStatus  @default(DRAFT)
   submittedAt  DateTime?
+  academicYear String?
+  yearOfStudy  Int?
   reviewedAt   DateTime?
   student      Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
   submitter    User               @relation("AchievementSubmitter", fields: [submittedBy], references: [id])

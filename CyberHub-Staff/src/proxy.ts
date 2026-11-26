@@ -31,4 +31,4 @@ export async function proxy(request: NextRequest) {
   return NextResponse.redirect(login);
 }
 
-export const config = { matcher: ["/department-admin/:path*", "/dashboard/:path*", "/events/:path*", "/add-event/:path*", "/approvals/:path*", "/student-records/:path*", "/profile/:path*"] };
+export const config = { matcher: ["/department-admin/:path*", "/dashboard/:path*", "/events/:path*", "/add-event/:path*", "/approvals/:path*", "/student-records/:path*", "/student-documents/:path*", "/profile/:path*"] };

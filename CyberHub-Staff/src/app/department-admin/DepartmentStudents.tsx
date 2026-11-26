@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useAdmin } from "./AdminShell";
 import { RecordList } from "./AdminRecords";
 import { adminHref, getModule } from "./adminData";
 import { Empty, PageHeader, Status, formatDate } from "./adminUi";
-import { achievementTypes } from "./departmentApi";
+import { achievementTypes, apiUrl, type DirectoryStudent } from "./departmentApi";
 import s from "./admin.module.css";
 
 const base = adminHref("students");
@@ -70,6 +70,68 @@ export function DepartmentStudents() {
   </>;
 }
 
+function AcademicPlacement({ student }: { student: DirectoryStudent }) {
+  const { directory, notice } = useAdmin();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const fields = new FormData(event.currentTarget);
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/staff/students/${encodeURIComponent(student.id)}/academic-placement`, {
+        method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ academicYear: fields.get("academicYear"), yearOfStudy: Number(fields.get("yearOfStudy")), classSection: fields.get("classSection") }),
+      });
+      const result = await response.json() as {
+        data?: Pick<DirectoryStudent, "academicYear" | "yearOfStudy" | "classSection">;
+        error?: { message?: string };
+      };
+      if (!response.ok || !result.data) throw new Error(result.error?.message ?? "The academic placement could not be saved.");
+      directory.setData((current) => current?.map((entry) => entry.id === student.id ? { ...entry, ...result.data } : entry) ?? null);
+      setEditing(false);
+      notice("Academic placement saved.");
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "The academic placement could not be saved.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return <section className={s.card}>
+    <h2>Academic placement</h2>
+    {editing ? <form className={s.form} onSubmit={save}>
+      <p>New submissions will use this year. Earlier submissions keep their recorded year.</p>
+      <label className={s.field}>Academic year
+        <input name="academicYear" placeholder="e.g. 2026–27" defaultValue={student.academicYear ?? ""} maxLength={16} required disabled={saving} />
+      </label>
+      <div className={s.field}>
+        <label htmlFor="placement-study-year">Year of study</label>
+        <select name="yearOfStudy" id="placement-study-year" defaultValue={student.yearOfStudy ?? ""} required disabled={saving}>
+          <option value="">Select year</option>
+          {[1, 2, 3, 4].map((year) => <option key={year} value={year}>Year {year}</option>)}
+        </select>
+      </div>
+      <label className={s.field}>Class or section
+        <input name="classSection" placeholder="e.g. Cybersecurity A" defaultValue={student.classSection ?? ""} maxLength={120} required disabled={saving} />
+      </label>
+      {error && <p className={s.error} role="alert">{error}</p>}
+      <div className={s.formActions}><button type="button" className={s.secondary} disabled={saving} onClick={() => { setError(""); setEditing(false); }}>Cancel</button>
+        <button className={s.primary} disabled={saving}>{saving ? "Saving…" : "Save placement"}</button></div>
+    </form> : <>
+      <dl className={s.details}>
+        <div><dt>Academic year</dt><dd>{student.academicYear ?? "Unassigned"}</dd></div>
+        <div><dt>Year of study</dt><dd>{student.yearOfStudy ? `Year ${student.yearOfStudy}` : "Unassigned"}</dd></div>
+        <div><dt>Class or section</dt><dd>{student.classSection ?? "Unassigned"}</dd></div>
+      </dl>
+      <button type="button" className={s.secondary} onClick={() => setEditing(true)}>Edit academic placement</button>
+    </>}
+  </section>;
+}
+
 export function DepartmentStudentProfile({ id }: { id: string }) {
   const { account, directory } = useAdmin();
   const student = directory.data?.find((entry) => entry.id === id);
@@ -86,6 +148,7 @@ export function DepartmentStudentProfile({ id }: { id: string }) {
         ["Batch", student.batch], ["Semester", student.semester], ["Phone", student.user.phone],
         ["Account status", student.user.active === undefined ? null : student.user.active ? "Active" : "Inactive"]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || "—"}</dd></div>)}
     </dl></section>
+    <AcademicPlacement key={student.id} student={student} />
     <section className={s.card}><h2>Documents</h2><p>{documents} supporting {documents === 1 ? "file" : "files"} across submitted achievements.</p>
       <Link className={s.textLink} href={adminHref("documents") + "?student=" + encodeURIComponent(id)}>View student documents</Link></section>
     <section className={s.card}><h2>Achievements</h2>{student.achievements.length ? <ul className={s.linkList}>

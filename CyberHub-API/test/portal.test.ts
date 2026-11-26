@@ -447,3 +447,63 @@ test("logs attended and conducted events and restricts them to their owner", asy
   assert.equal(saved.find((event: { mode: string }) => event.mode === "attended").certificate.fileName, certificate.fileName);
   for (const event of saved) assert.deepEqual(event.details.focusAreas, details.focusAreas);
 });
+
+test("preserves submission study years when the department admin advances a student", async () => {
+  const student = await login("student");
+  const faculty = await login("faculty");
+  const departmentAdmin = await login("department-admin");
+  const placementUrl = "/api/v1/staff/students/stu-profile-001/academic-placement";
+  const placement = { classSection: "Cybersecurity A", academicYear: "2026-2027", yearOfStudy: 1 };
+  const setPlacement = (headers: { cookie: string }, payload: object, url = placementUrl) =>
+    app.inject({ method: "PATCH", url, headers, payload });
+  assert.equal((await setPlacement(student, placement)).statusCode, 403);
+  assert.equal((await setPlacement(faculty, placement)).statusCode, 403);
+  assert.equal((await setPlacement(departmentAdmin, placement, "/api/v1/staff/students/test-outside-student-profile/academic-placement")).statusCode, 404);
+  assert.equal((await setPlacement(departmentAdmin, { ...placement, yearOfStudy: 5 })).statusCode, 400);
+  assert.equal((await setPlacement(departmentAdmin, { ...placement, academicYear: "2026-28" })).statusCode, 400);
+
+  const listUrl = "/api/v1/achievements";
+  const certificate = {
+    type: "CERTIFICATE", title: "Study year certificate", values: { issuer: "QA Institute" },
+    evidence: [{ fileName: "certificate.pdf", mimeType: "application/pdf", content: Buffer.from("%PDF-1.4\n%%EOF").toString("base64") }],
+  };
+  const create = async (payload: object) => {
+    const response = await app.inject({ method: "POST", url: listUrl, headers: student, payload });
+    assert.equal(response.statusCode, 201);
+    return response.json().data;
+  };
+  const edit = async (id: string, payload: object) => {
+    const response = await app.inject({ method: "PATCH", url: listUrl + "/" + id, headers: student, payload });
+    assert.equal(response.statusCode, 200);
+    return response.json().data;
+  };
+
+  const unrecorded = await create({ ...certificate, title: "Unrecorded year certificate" });
+  const assigned = await setPlacement(departmentAdmin, placement);
+  assert.equal(assigned.statusCode, 200);
+  assert.deepEqual(assigned.json().data, { ...placement, academicYear: "2026–27" });
+  const firstYear = await create({ ...certificate, title: "Year one certificate", yearOfStudy: 4, academicYear: "2029–30" });
+  const draft = await create({ ...certificate, title: "Draft before advancement", status: "DRAFT" });
+  assert.equal(firstYear.yearOfStudy, 1);
+  assert.equal(firstYear.academicYear, "2026–27");
+
+  const advanced = await setPlacement(departmentAdmin, { ...placement, yearOfStudy: 2, academicYear: "2027–28" });
+  assert.equal(advanced.statusCode, 200);
+  const secondYear = await create({ ...certificate, title: "Year two certificate" });
+  assert.equal(secondYear.yearOfStudy, 2);
+  assert.equal(secondYear.academicYear, "2027–28");
+
+  const { evidence: _evidence, ...editable } = certificate;
+  assert.equal((await edit(draft.id, { ...editable, title: "Draft submitted in year two" })).yearOfStudy, 2);
+  assert.equal((await edit(firstYear.id, { ...editable, status: "DRAFT" })).yearOfStudy, 1);
+  assert.equal((await edit(firstYear.id, editable)).yearOfStudy, 1);
+  assert.equal((await edit(unrecorded.id, editable)).yearOfStudy, null);
+
+  const directory = await app.inject({ url: "/api/v1/staff/students", headers: faculty });
+  assert.equal(directory.statusCode, 200);
+  const profile = directory.json().data.find(({ id }: { id: string }) => id === "stu-profile-001");
+  assert.equal(profile.yearOfStudy, 2);
+  const results = profile.achievements.filter(({ yearOfStudy }: { yearOfStudy?: number }) => yearOfStudy === 2);
+  assert.deepEqual(new Set(results.map(({ id }: { id: string }) => id)), new Set([secondYear.id, draft.id]));
+  assert.ok(results.every(({ documents }: { documents: unknown[] }) => documents.length === 1));
+});

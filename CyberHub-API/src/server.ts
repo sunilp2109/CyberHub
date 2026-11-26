@@ -43,6 +43,9 @@ type UserWithRelations = {
     programme: string;
     batch: string;
     semester: number;
+    academicYear?: string | null;
+    yearOfStudy?: number | null;
+    classSection?: string | null;
     createdAt?: Date;
   } | null;
   staffProfile: {
@@ -219,6 +222,8 @@ type MockAchievementRecord = {
   metadata: Record<string, string> | null;
   status: AchievementStatus;
   submittedAt: Date | null;
+  academicYear?: string | null;
+  yearOfStudy?: number | null;
   reviewedAt: Date | null;
   documents: Array<{ id: string; fileName: string; storageKey: string; mimeType: string; sizeBytes: number; createdAt?: Date }>;
   approvals: Array<{ id: string; achievementId: string; reviewerId: string; action: AchievementStatus; comment?: string | null; createdAt: Date }>;
@@ -429,6 +434,25 @@ const achievementSchema = z.object({
   ));
 
 const achievementFormError = "Check the required fields and any attached files.";
+
+const studentPlacementSchema = z.strictObject({
+  classSection: z.string().trim().min(1).max(120),
+  yearOfStudy: z.number().int().min(1).max(4),
+  academicYear: z.string().trim().transform((value, context) => {
+    const match = /^(\d{4})\s*[-–]\s*(\d{2}|\d{4})$/.exec(value);
+    const start = Number(match?.[1]);
+    const end = String(start + 1);
+    if (!match || (match[2] !== end && match[2] !== end.slice(-2))) {
+      context.addIssue({ code: "custom", message: "Enter consecutive academic years, for example 2026–27." });
+      return z.NEVER;
+    }
+    return `${match[1]}–${end.slice(-2)}`;
+  }),
+});
+
+function submissionPlacement(student: NonNullable<UserWithRelations["student"]>) {
+  return { academicYear: student.academicYear ?? null, yearOfStudy: student.yearOfStudy ?? null };
+}
 
 const reviewSchema = z.object({
   action: z.enum(["APPROVED", "REJECTED"]),
@@ -854,6 +878,7 @@ app.get("/api/v1/staff/students", async (request, reply) => {
     where: user.role === UserRole.ADMIN ? {} : { departmentId: user.departmentId },
     select: {
       id: true, registerNo: true, department: true, programme: true, batch: true, semester: true,
+      academicYear: true, yearOfStudy: true, classSection: true,
       ...(user.role === UserRole.DEPARTMENT_ADMIN ? { createdAt: true } : {}),
       user: { select: { name: true, email: true, ...(user.role === UserRole.DEPARTMENT_ADMIN ? { active: true, phone: true } : {}) } },
       achievements: {
@@ -864,6 +889,35 @@ app.get("/api/v1/staff/students", async (request, reply) => {
     },
     orderBy: { registerNo: "asc" },
   }) };
+});
+
+app.patch<{ Params: { id: string } }>("/api/v1/staff/students/:id/academic-placement", async (request, reply) => {
+  const user = await getCurrentUser(request);
+  if (!user) return reply.code(401).send({ error: { message: "Sign in required." } });
+  if (user.role !== UserRole.DEPARTMENT_ADMIN || !reviewScope(user)) {
+    return reply.code(403).send({ error: { message: "Department Admin access required." } });
+  }
+
+  const placement = studentPlacementSchema.safeParse(request.body);
+  if (!placement.success) {
+    return reply.code(400).send({ error: { message: "Enter a class or section, a year of study from 1 to 4, and an academic year such as 2026–27." } });
+  }
+
+  const { id } = request.params;
+  if (isDemoSession(request)) {
+    const student = mockStudentFor(id)?.student;
+    if (!student || student.departmentId !== user.departmentId) {
+      return reply.code(404).send({ error: { message: "Student not found in your department." } });
+    }
+    Object.assign(student, placement.data);
+  } else {
+    const updated = await prisma.student.updateMany({
+      where: { id, departmentId: user.departmentId },
+      data: placement.data,
+    });
+    if (!updated.count) return reply.code(404).send({ error: { message: "Student not found in your department." } });
+  }
+  return { data: placement.data };
 });
 
 const eventWithCertificateSchema = eventSchema.and(z.object({ certificate: evidenceFileSchema.optional() }))
@@ -929,12 +983,15 @@ app.post("/api/v1/achievements", { bodyLimit: evidenceBodyLimit }, async (reques
 
   const demo = isDemoSession(request);
   const { type, title, description, values, status, evidence } = parsed.data;
-  const studentId = user.student.id;
+  const student = user.student;
+  const studentId = student.id;
   const record = await withAchievementEvidence(evidence, demo, async (documents) => {
+    const placement = status === "SUBMITTED" ? submissionPlacement(student) : {};
     if (!demo) return prisma.achievement.create({
       data: {
         studentId, submittedBy: user.id, type, title, description,
         metadata: values, status, submittedAt: status === "SUBMITTED" ? new Date() : null,
+        ...placement,
         documents: { create: documents },
       },
       include: achievementIncludes,
@@ -949,6 +1006,7 @@ app.post("/api/v1/achievements", { bodyLimit: evidenceBodyLimit }, async (reques
       submittedBy: user.id,
       status,
       submittedAt: status === "SUBMITTED" ? new Date() : null,
+      ...placement,
       reviewedAt: null,
       metadata: values,
       documents,
@@ -976,7 +1034,12 @@ app.patch("/api/v1/achievements/:id", { bodyLimit: evidenceBodyLimit }, async (r
 
   const demo = isDemoSession(request);
   const { type, title, description, values, status, evidence } = parsed.data;
-  const where = { id: params.data.id, studentId: user.student.id, type };
+  const student = user.student;
+  const where = { id: params.data.id, studentId: student.id, type };
+  const submissionChanges = (record: { status: AchievementStatus; submittedAt: Date | null }) =>
+    status === "SUBMITTED" && record.status === AchievementStatus.DRAFT && !record.submittedAt
+    ? { submittedAt: new Date(), ...submissionPlacement(student) }
+    : {};
   const limit = evidenceLimit(type);
   const attachmentConflict = () => reply.code(400).send({ error: {
     message: type === "INTERNSHIP" ? "An internship can have one offer letter and one completion certificate."
@@ -994,7 +1057,7 @@ app.patch("/api/v1/achievements/:id", { bodyLimit: evidenceBodyLimit }, async (r
       const updated = await withAchievementEvidence(evidence, false, (documents) => prisma.$transaction(async (tx) => {
         const result = await tx.achievement.updateMany({
           where: { ...where, status: record.status, updatedAt: record.updatedAt },
-          data: { title, description: description ?? null, metadata: values, status, submittedAt: status === "SUBMITTED" ? record.submittedAt ?? new Date() : null },
+          data: { title, description: description ?? null, metadata: values, status, ...submissionChanges(record) },
         });
         if (!result.count) return null;
         if (documents.length) {
@@ -1022,8 +1085,8 @@ app.patch("/api/v1/achievements/:id", { bodyLimit: evidenceBodyLimit }, async (r
     existing.title = title;
     existing.description = description ?? null;
     existing.metadata = values;
+    Object.assign(existing, submissionChanges(existing));
     existing.status = status;
-    existing.submittedAt = status === "SUBMITTED" ? existing.submittedAt ?? new Date() : null;
     existing.updatedAt = new Date();
     existing.documents.push(...documents);
     return existing;

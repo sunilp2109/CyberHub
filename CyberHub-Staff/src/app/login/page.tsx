@@ -104,104 +104,111 @@ export default function LoginPage() {
   };
 
   return (
-    <main className={styles.loginWrapper}>
-      <div className={styles.brandPanel}>
-        <div className={styles.brand}>
-          <Image src="/cyberhub-logo.png" alt="CyberHub" width={2172} height={724} sizes="190px" />
-        </div>
-        <div className={styles.brandCopy}>
-          <p className={styles.department}>Cybersecurity Department</p>
-          <p className={styles.brandHeading}>Your academic<br />workspace.</p>
-          <p className={styles.brandDescription}>Track achievements, review submissions, and manage academic events.</p>
-        </div>
-      </div>
-
-      <section className={styles.formPanel} aria-labelledby="login-heading">
-        <div className={styles.formContainer}>
-          <header className={styles.formHeader}>
-            <h1 id="login-heading">Sign in</h1>
-            <p>Use your student or staff account to continue.</p>
-          </header>
-
-          {error && (
-            <div className={styles.errorMsg} role="alert">
-              <span aria-hidden="true"><IconAlert /></span>
-              <span>{error}</span>
+    <div className={styles.loginPage}>
+      <main className={styles.loginWrapper}>
+        <div className={styles.brandPanel}>
+          <div className={styles.brandContent}>
+            <Image className={styles.brandLogo} src="/cyberhub-logo.png" alt="CyberHub" width={2172} height={724} sizes="192px" />
+            <div className={styles.brandCopy}>
+              <p className={styles.department}>Cybersecurity Department</p>
+              <p className={styles.brandHeading}>
+                <strong><span>Your academic</span><br />workspace.</strong>
+              </p>
+              <p className={styles.brandDescription}>Track achievements, review submissions, and manage academic events.</p>
             </div>
-          )}
-
-          <form className={styles.form} onSubmit={handleSubmit} noValidate aria-busy={loading}>
-            <div className={styles.formGroup}>
-              <label htmlFor="identifier">Student or staff ID or email</label>
-              <div className={styles.inputWrapper}>
-                <span className={styles.inputIcon} aria-hidden="true"><IconUser /></span>
-                <input
-                  id="identifier"
-                  name="username"
-                  type="text"
-                  placeholder="Enter your ID or email"
-                  value={identifier}
-                  onChange={(event) => setIdentifier(event.target.value)}
-                  autoComplete="username"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  disabled={loading}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="password">Password</label>
-              <div className={styles.inputWrapper}>
-                <span className={styles.inputIcon} aria-hidden="true"><IconLock /></span>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPass ? "text" : "password"}
-                  className={styles.passwordInput}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  autoComplete="current-password"
-                  disabled={loading}
-                  required
-                />
-                <button
-                  type="button"
-                  className={styles.eyeButton}
-                  onClick={() => setShowPass((visible) => !visible)}
-                  aria-label={showPass ? "Hide password" : "Show password"}
-                  aria-controls="password"
-                >
-                  {showPass ? <IconEyeOff /> : <IconEye />}
-                </button>
-              </div>
-            </div>
-
-            <label className={styles.checkLabel}>
-              <input
-                type="checkbox"
-                id="remember"
-                checked={remember}
-                onChange={(event) => setRemember(event.target.checked)}
-                disabled={loading}
-              />
-              Remember me
-            </label>
-
-            <button id="sign-in-btn" type="submit" className={styles.signInBtn} disabled={loading}>
-              {loading ? "Signing in…" : <>Sign in <span aria-hidden="true">→</span></>}
-            </button>
-          </form>
-
-          <div className={styles.helpText}>
-            <p>Having trouble signing in?</p>
-            <a href="mailto:admin@cyberhub.edu">Contact your department admin</a>
           </div>
-          <p className={styles.designCredit}>Designed by SUNIL</p>
         </div>
-      </section>
-    </main>
+
+        <section className={styles.formPanel} aria-labelledby="login-heading">
+          <div className={styles.formContainer}>
+            <header className={styles.formHeader}>
+              <h1 id="login-heading">Sign in</h1>
+              <p>Use your student or staff account to continue.</p>
+            </header>
+
+            {error && (
+              <div className={styles.errorMsg} role="alert">
+                <span aria-hidden="true"><IconAlert /></span>
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form className={styles.form} onSubmit={handleSubmit} noValidate aria-busy={loading}>
+              <div className={styles.formGroup}>
+                <label htmlFor="identifier">Student or staff ID or email</label>
+                <div className={styles.inputWrapper}>
+                  <span className={styles.inputIcon} aria-hidden="true"><IconUser /></span>
+                  <input
+                    id="identifier"
+                    name="username"
+                    type="text"
+                    placeholder="Enter your ID or email"
+                    value={identifier}
+                    onChange={(event) => setIdentifier(event.target.value)}
+                    autoComplete="username"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="password">Password</label>
+                <div className={styles.inputWrapper}>
+                  <span className={styles.inputIcon} aria-hidden="true"><IconLock /></span>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPass ? "text" : "password"}
+                    className={styles.passwordInput}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="current-password"
+                    disabled={loading}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className={styles.eyeButton}
+                    onClick={() => setShowPass((visible) => !visible)}
+                    aria-label={showPass ? "Hide password" : "Show password"}
+                    aria-controls="password"
+                  >
+                    {showPass ? <IconEyeOff /> : <IconEye />}
+                  </button>
+                </div>
+              </div>
+
+              <label className={styles.checkLabel}>
+                <input
+                  type="checkbox"
+                  id="remember"
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                  disabled={loading}
+                />
+                Remember me
+              </label>
+
+              <button id="sign-in-btn" type="submit" className={styles.signInBtn} disabled={loading}>
+                {loading ? "Signing in…" : <>Sign in <span aria-hidden="true">→</span></>}
+              </button>
+            </form>
+
+            <div className={styles.helpText}>
+              <p>Having trouble signing in?</p>
+              <a href="mailto:admin@cyberhub.edu">Contact your department admin</a>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className={styles.pageFooter}>
+        <p>© 2026 Cybersecurity Department</p>
+        <p>Designed by SUNIL</p>
+      </footer>
+    </div>
   );
 }

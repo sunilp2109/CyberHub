@@ -8,6 +8,9 @@ export interface DirectoryStudent {
   programme: string;
   batch: string;
   semester: number;
+  academicYear?: string | null;
+  yearOfStudy?: number | null;
+  classSection?: string | null;
   user: { name: string; email: string | null };
   achievements: {
     id: string;
@@ -16,6 +19,8 @@ export interface DirectoryStudent {
     status: ApprovalStatus;
     description: string | null;
     submittedAt: string | null;
+    academicYear?: string | null;
+    yearOfStudy?: number | null;
     createdAt: string;
     approvals: { action: ApprovalStatus; comment?: string | null }[];
     documents: { id: string; fileName: string; mimeType: string; sizeBytes: number; createdAt?: string }[];

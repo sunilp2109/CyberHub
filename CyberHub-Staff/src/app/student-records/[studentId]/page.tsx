@@ -18,14 +18,20 @@ function formatDate(date: string) {
   return dateFormat.format(new Date(date));
 }
 
-export default async function StudentProfilePage({ params }: { params: Promise<{ studentId: string }> }) {
+export default async function StudentProfilePage({ params, searchParams }: {
+  params: Promise<{ studentId: string }>;
+  searchParams: Promise<{ year?: string | string[] }>;
+}) {
   const { studentId } = await params;
+  const { year } = await searchParams;
   const directory = await getStaffDirectory();
   if (!directory) return <MainLayout><p role="alert">Student records could not be loaded. <Link href="/student-records">Return to student records</Link></p></MainLayout>;
   const student = directory.find((entry) => entry.id === studentId);
   if (!student) notFound();
 
-  const submissions = student.achievements;
+  const studyYears = ["1", "2", "3", "4", "unrecorded"];
+  const selected = typeof year === "string" && studyYears.includes(year) ? year : "";
+  const submissions = student.achievements.filter((record) => !selected || selected === String(record.yearOfStudy ?? "unrecorded"));
   const fileCount = submissions.reduce((total, record) => total + record.documents.length, 0);
 
   return (
@@ -64,8 +70,16 @@ export default async function StudentProfilePage({ params }: { params: Promise<{
 
           <section className={`${styles.card} ${styles.profileSection}`} aria-labelledby="student-submissions">
             <h2 id="student-submissions">Submissions and files</h2>
+            <nav className={styles.yearFilters} aria-label="Filter submissions by year of study">
+              {["", ...studyYears].map((value) => (
+                <Link key={value} href={value ? `?year=${value}` : `/student-records/${encodeURIComponent(studentId)}`}
+                  replace scroll={false} prefetch={false} aria-current={selected === value ? "true" : undefined}>
+                  {value === "unrecorded" ? "Year not recorded" : value ? `Year ${value}` : "All years"}
+                </Link>
+              ))}
+            </nav>
             <p className={styles.note}>{submissions.length} {submissions.length === 1 ? "submission" : "submissions"} · {fileCount} {fileCount === 1 ? "file" : "files"}</p>
-            {submissions.length === 0 && <p className={styles.empty}>No submissions for this student.</p>}
+            {submissions.length === 0 && <p className={styles.empty}>{selected ? "No submissions match this year filter." : "No submissions for this student."}</p>}
             {submissions.map((record) => (
               <article key={record.id} className={styles.submission}>
                 <header className={styles.submissionHeader}>
@@ -78,6 +92,8 @@ export default async function StudentProfilePage({ params }: { params: Promise<{
                 <p className={styles.description}>{record.description}</p>
                 <dl className={styles.profileInfo}>
                   <div><dt>Submitted</dt><dd>{formatDate(record.submittedAt ?? record.createdAt)}</dd></div>
+                  <div><dt>Year of study at submission</dt><dd>{record.yearOfStudy ? `Year ${record.yearOfStudy}` : "Year not recorded"}</dd></div>
+                  {record.academicYear && <div><dt>Academic year at submission</dt><dd>{record.academicYear}</dd></div>}
                   {record.status === "REJECTED" && record.approvals[0]?.comment && (
                     <div><dt>Rejection reason</dt><dd>{record.approvals[0].comment}</dd></div>
                   )}
